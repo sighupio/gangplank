@@ -14,12 +14,24 @@
 package oidc
 
 import (
+	"bytes"
+	"encoding/base64"
+	"log"
 	"testing"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 func TestParseToken(t *testing.T) {
+	base64Decode := func(src string) []byte {
+		data, err := base64.RawURLEncoding.DecodeString(src)
+		if err != nil {
+			log.Fatal("error:", err)
+		}
+
+		return data
+	}
+
 	tests := map[string]struct {
 		idToken      string
 		clientSecret string
@@ -48,7 +60,7 @@ func TestParseToken(t *testing.T) {
 					"iss":       "GangwayTest",
 					"Surname":   "Way",
 				},
-				Signature: "zNG4Dnxr76J0p4phfsAUYWunioct0krkMiunMynlQsU",
+				Signature: base64Decode("zNG4Dnxr76J0p4phfsAUYWunioct0krkMiunMynlQsU"),
 				Valid:     true,
 			},
 		},
@@ -68,7 +80,7 @@ func TestParseToken(t *testing.T) {
 					"name":  "John Doe",
 					"admin": true,
 				},
-				Signature: "",
+				Signature: base64Decode("EkN-DOsnsuRjRO6BxXemmJDm3HbxrbRzXglbN2S4sOkopdU4IsDxTI8jO19W_A4K8ZPJijNLis4EZsHeY559a4DFOd50_OqgHGuERTqYZyuhtF39yxJPAjUESwxk2J5k_4zM3O-vtd1Ghyo4IbqKKSy6J9mTniYJPenn5-HIirE"),
 				Valid:     false,
 			},
 		},
@@ -89,8 +101,8 @@ func TestParseToken(t *testing.T) {
 				if got.Valid != tc.want.Valid {
 					t.Fatalf("Valid: want: %v, got: %v", tc.want, got)
 				}
-				if got.Signature != tc.want.Signature {
-					t.Fatalf("Signature: want: %v, got: %v", tc.want, got)
+				if !bytes.Equal(got.Signature, tc.want.Signature) {
+					t.Fatalf("Signature: want: %v, got: %v", tc.want.Signature, got.Signature)
 				}
 				if got.Raw != tc.want.Raw {
 					t.Fatalf("Raw: want: %v, got: %v", tc.want, got)

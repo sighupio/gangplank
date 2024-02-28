@@ -16,7 +16,7 @@ package config
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/kelseyhightower/envconfig"
@@ -69,7 +69,7 @@ func NewConfig(configFile string) (*Config, error) {
 	}
 
 	if configFile != "" {
-		data, err := ioutil.ReadFile(configFile)
+		data, err := os.ReadFile(configFile)
 		if err != nil {
 			return nil, err
 		}
