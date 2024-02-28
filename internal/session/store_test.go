@@ -15,21 +15,21 @@ package session
 
 import (
 	"fmt"
-	"github.com/gorilla/sessions"
-	log "github.com/sirupsen/logrus"
 	"math"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/gorilla/sessions"
 )
 
 func TestJoinSectionCookies(t *testing.T) {
 	var originalValue string
 	var value string
 	cookies := buildRandomCookies(2, 3800, "test_%d")
-	buildRequestWithCookies(cookies, func(cookies []*http.Cookie, r *http.Request) {
+	buildRequestWithCookies(t, cookies, func(cookies []*http.Cookie, r *http.Request) {
 		for _, c := range cookies {
 			originalValue += c.Value
 		}
@@ -44,7 +44,7 @@ func TestJoinSectionCookiesSingle(t *testing.T) {
 	var originalValue string
 	var value string
 	cookies := buildRandomCookies(1, 2000, "test_%d")
-	buildRequestWithCookies(cookies, func(cookies []*http.Cookie, r *http.Request) {
+	buildRequestWithCookies(t, cookies, func(cookies []*http.Cookie, r *http.Request) {
 		for _, c := range cookies {
 			originalValue += c.Value
 		}
@@ -96,7 +96,7 @@ func TestSplitAndJoin(t *testing.T) {
 	sectionCookies := splitCookie(originalValue)
 	cookies := buildCookiesFromValues(sectionCookies, "test_%d")
 	var value string
-	buildRequestWithCookies(cookies, func(cookies []*http.Cookie, r *http.Request) {
+	buildRequestWithCookies(t, cookies, func(cookies []*http.Cookie, r *http.Request) {
 		value = joinSectionCookies(r, "test")
 	})
 	if value != originalValue {
@@ -108,7 +108,7 @@ func TestSplitAndJoin(t *testing.T) {
 
 type handleReq func([]*http.Cookie, *http.Request)
 
-func buildRequestWithCookies(cookies []*http.Cookie, fn handleReq) {
+func buildRequestWithCookies(t *testing.T, cookies []*http.Cookie, fn handleReq) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		for _, cookie := range cookies {
 			r.AddCookie(cookie)
@@ -118,7 +118,7 @@ func buildRequestWithCookies(cookies []*http.Cookie, fn handleReq) {
 	defer ts.Close()
 	_, err := http.Get(ts.URL)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatalf("Error getting from test server: %v", err)
 	}
 }
 

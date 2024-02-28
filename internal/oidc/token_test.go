@@ -16,7 +16,6 @@ package oidc
 import (
 	"bytes"
 	"encoding/base64"
-	"log"
 	"testing"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -26,7 +25,7 @@ func TestParseToken(t *testing.T) {
 	base64Decode := func(src string) []byte {
 		data, err := base64.RawURLEncoding.DecodeString(src)
 		if err != nil {
-			log.Fatal("error:", err)
+			t.Fatalf("Error decoding base64 string: %v", err)
 		}
 
 		return data

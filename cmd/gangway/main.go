@@ -19,6 +19,7 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -29,7 +30,6 @@ import (
 	"github.com/heptiolabs/gangway/internal/oidc"
 	"github.com/heptiolabs/gangway/internal/session"
 	"github.com/justinas/alice"
-	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 )
 
@@ -42,19 +42,30 @@ var transportConfig *config.TransportConfig
 // wrapper function for http logging
 func httpLogger(fn http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		defer log.Printf("%s %s %s", r.Method, r.URL, r.RemoteAddr)
+		defer slog.Debug("HTTP log", "method", r.Method, "url", r.URL, "remote-addr", r.RemoteAddr)
 		fn(w, r)
 	}
 }
 
 func main() {
 	cfgFile := flag.String("config", "", "The config file to use.")
+	logLevel := flag.String("log-level", "info", "The log level to use. (debug, info, warn, error)")
 	flag.Parse()
+
+	var logLevelVar = new(slog.LevelVar)
+
+	h := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: logLevelVar})
+	slog.SetDefault(slog.New(h))
+
+	if err := logLevelVar.UnmarshalText([]byte(*logLevel)); err != nil {
+		slog.Error("Could not parse log level", "error", err)
+		os.Exit(1)
+	}
 
 	var err error
 	cfg, err = config.NewConfig(*cfgFile)
 	if err != nil {
-		log.Errorf("Could not parse config file: %s", err)
+		slog.Error("Could not parse config file", "error", err)
 		os.Exit(1)
 	}
 
@@ -115,14 +126,20 @@ func main() {
 
 	// start up the http server
 	go func() {
-		log.Infof("Gangway started! Listening on: %s", bindAddr)
+		slog.Info("Gangway started", "address", bindAddr)
 
 		// exit with FATAL logging why we could not start
 		// example: FATA[0000] listen tcp 0.0.0.0:8080: bind: address already in use
 		if cfg.ServeTLS {
-			log.Fatal(httpServer.ListenAndServeTLS(cfg.CertFile, cfg.KeyFile))
+			if err := httpServer.ListenAndServeTLS(cfg.CertFile, cfg.KeyFile); err != nil {
+				slog.Error("Could not start HTTPS server", "error", err)
+				os.Exit(1)
+			}
 		} else {
-			log.Fatal(httpServer.ListenAndServe())
+			if err := httpServer.ListenAndServe(); err != nil {
+				slog.Error("Could not start HTTP server", "error", err)
+				os.Exit(1)
+			}
 		}
 	}()
 
@@ -131,7 +148,7 @@ func main() {
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 	<-signalChan
 
-	log.Println("Shutdown signal received, exiting.")
+	slog.Info("Shutdown signal received, exiting")
 	// close the HTTP server
 	httpServer.Shutdown(context.Background())
 }
