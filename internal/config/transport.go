@@ -16,7 +16,7 @@ package config
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -39,12 +39,13 @@ func NewTransportConfig(trustedCAPath string) *TransportConfig {
 		// Read in the cert file
 		certs, err := os.ReadFile(trustedCAPath)
 		if err != nil {
-			log.Fatalf("Failed to append %q to RootCAs: %v", trustedCAPath, err)
+			slog.Error("Failed to append CA to RootCAs", "ca", trustedCAPath, "error", err)
+			os.Exit(1)
 		}
 
 		// Append our cert to the system pool
 		if ok := rootCAs.AppendCertsFromPEM(certs); !ok {
-			log.Println("No certs appended, using system certs only")
+			slog.Info("No certs appended, using system certs only")
 		}
 	}
 

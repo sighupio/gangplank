@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	"github.com/gorilla/sessions"
-	log "github.com/sirupsen/logrus"
 )
 
 func TestGenerateSessionKeys(t *testing.T) {
@@ -53,7 +52,7 @@ func TestCleanupSession(t *testing.T) {
 	defer ts.Close()
 	_, err := http.Get(ts.URL)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatalf("Error getting from test server: %v", err)
 	}
 	if session.Options.MaxAge != -1 {
 		t.Errorf("Session was not reset. Have max age of %d. Should have -1", session.Options.MaxAge)

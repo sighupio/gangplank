@@ -21,6 +21,7 @@ import (
 	"fmt"
 	htmltemplate "html/template"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
@@ -31,7 +32,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/heptiolabs/gangway/internal/oidc"
 	"github.com/heptiolabs/gangway/templates"
-	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api/v1"
 )
@@ -69,14 +69,14 @@ func serveTemplate(tmplFile string, data interface{}, w http.ResponseWriter) {
 		templatePath := filepath.Join(cfg.CustomHTMLTemplatesDir, tmplFile)
 		templateData, err := os.ReadFile(templatePath)
 		if err != nil {
-			log.Errorf("Failed to find template asset: %s at path: %s", tmplFile, templatePath)
+			slog.Error("Failed to find template asset", "asset", tmplFile, "path", templatePath)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		tmpl, err = tmpl.Parse(string(templateData))
 		if err != nil {
-			log.Errorf("Failed to parse template: %v", err)
+			slog.Error("Failed to parse template", "error", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -85,7 +85,7 @@ func serveTemplate(tmplFile string, data interface{}, w http.ResponseWriter) {
 
 		tmpl, err = tmpl.ParseFS(templates.FS, tmplFile)
 		if err != nil {
-			log.Errorf("Failed to parse template: %v", err)
+			slog.Error("Failed to parse template", "error", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
@@ -171,7 +171,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	session, err := gangwayUserSession.Session.Get(r, "gangway")
 	if err != nil {
-		log.Errorf("Got an error in login: %s", err)
+		slog.Error("Got an error in login", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -278,7 +278,7 @@ func kubeConfigHandler(w http.ResponseWriter, r *http.Request) {
 
 	d, err := yaml.Marshal(generateKubeConfig(info))
 	if err != nil {
-		log.Errorf("Error creating kubeconfig - %s", err.Error())
+		slog.Error("Error creating kubeconfig", "error", err.Error())
 		http.Error(w, "Error creating kubeconfig", http.StatusInternalServerError)
 		return
 	}
@@ -294,12 +294,12 @@ func generateInfo(w http.ResponseWriter, r *http.Request) *userInfo {
 	if err != nil {
 		// let us know that we couldn't open the file. This only cause missing output
 		// does not impact actual function of program
-		log.Errorf("Failed to open CA file. %s", err)
+		slog.Error("Failed to open CA file", "error", err)
 	}
 	defer file.Close()
 	caBytes, err := io.ReadAll(file)
 	if err != nil {
-		log.Warningf("Could not read CA file: %s", err)
+		slog.Warn("Could not read CA file", "error", err)
 	}
 
 	// load the session cookies
@@ -350,7 +350,7 @@ func generateInfo(w http.ResponseWriter, r *http.Request) *userInfo {
 	kubeCfgUser := strings.Join([]string{username, cfg.ClusterName}, "@")
 
 	if cfg.EmailClaim != "" {
-		log.Warn("using the Email Claim config setting is deprecated. Gangway uses `UsernameClaim@ClusterName`. This field will be removed in a future version.")
+		slog.Warn("Using the Email Claim config setting is deprecated. Gangway uses `UsernameClaim@ClusterName`. This field will be removed in a future version.")
 	}
 
 	issuerURL, ok := claims["iss"].(string)
@@ -360,7 +360,7 @@ func generateInfo(w http.ResponseWriter, r *http.Request) *userInfo {
 	}
 
 	if cfg.ClientSecret == "" {
-		log.Warn("Setting an empty Client Secret should only be done if you have no other option and is an inherent security risk.")
+		slog.Warn("Setting an empty Client Secret should only be done if you have no other option and is an inherent security risk.")
 	}
 
 	info := &userInfo{
