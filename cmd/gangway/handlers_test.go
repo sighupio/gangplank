@@ -18,9 +18,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"reflect"
 	"regexp"
 	"strings"
@@ -247,7 +248,7 @@ func TestCommandLineHandler(t *testing.T) {
 			}
 			// if response code is OK then check that username is correct in resultant template
 			if rsp.Code == 200 {
-				bodyBytes, _ := ioutil.ReadAll(rsp.Body)
+				bodyBytes, _ := io.ReadAll(rsp.Body)
 				bodyString := string(bodyBytes)
 				re := regexp.MustCompile("--user=(.+)")
 				found := re.FindString(bodyString)
@@ -304,7 +305,7 @@ func TestKubeconfigHandler(t *testing.T) {
 
 			// Create dummy cluster CA file
 			clusterCAData := "dummy cluster CA"
-			f, err := ioutil.TempFile("", "gangway-kubeconfig-handler-test")
+			f, err := os.CreateTemp("", "gangway-kubeconfig-handler-test")
 			if err != nil {
 				t.Fatalf("Error creating temp file: %v", err)
 			}
@@ -363,7 +364,7 @@ func TestKubeconfigHandler(t *testing.T) {
 			}
 			// if response code is OK, validate the kubeconfig
 			if rsp.Code == 200 {
-				bodyBytes, err := ioutil.ReadAll(rsp.Body)
+				bodyBytes, err := io.ReadAll(rsp.Body)
 				if err != nil {
 					t.Fatalf("error reading body: %v", err)
 				}

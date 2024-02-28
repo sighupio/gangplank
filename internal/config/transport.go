@@ -16,10 +16,10 @@ package config
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -37,7 +37,7 @@ func NewTransportConfig(trustedCAPath string) *TransportConfig {
 
 	if trustedCAPath != "" {
 		// Read in the cert file
-		certs, err := ioutil.ReadFile(trustedCAPath)
+		certs, err := os.ReadFile(trustedCAPath)
 		if err != nil {
 			log.Fatalf("Failed to append %q to RootCAs: %v", trustedCAPath, err)
 		}
