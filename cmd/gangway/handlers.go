@@ -30,8 +30,8 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/heptiolabs/gangway/internal/oidc"
-	"github.com/heptiolabs/gangway/templates"
+	"github.com/sighupio/gangway/internal/oidc"
+	"github.com/sighupio/gangway/templates"
 	"golang.org/x/oauth2"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api/v1"
 )

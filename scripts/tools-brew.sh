@@ -1,3 +1,4 @@
+#!/bin/sh
 # Copyright 2017-present SIGHUP s.r.l
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,19 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-kind: Service
-apiVersion: v1
-metadata:
-  name: gangwaysvc
-  namespace: gangway
-  labels:
-    app: gangway
-spec:
-  type: ClusterIP
-  ports:
-    - name: "http"
-      protocol: TCP
-      port: 80
-      targetPort: "http"
-  selector:
-    app: gangway
+
+set -e
+set -o errexit -o nounset
+
+go install github.com/google/addlicense@latest

@@ -1,0 +1,103 @@
+# Copyright 2017-present SIGHUP s.r.l
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+kind: pipeline
+type: docker
+name: main
+
+steps:
+  - name: prepare
+    image: quay.io/sighup/golang:1.22.1
+    commands:
+      - mkdir -p .go/cache .go/modcache .go/tmp
+      - go mod download
+    environment:
+      GOCACHE: /drone/src/.go/cache
+      GOMODCACHE: /drone/src/.go/modcache
+      GOTMPDIR: /drone/src/.go/tmp
+    depends_on:
+      - clone
+
+  - name: check-license
+    image: quay.io/sighup/golang:1.22.1
+    pull: always
+    commands:
+      - make license-check
+    environment:
+      GOCACHE: /drone/src/.go/cache
+      GOMODCACHE: /drone/src/.go/modcache
+      GOTMPDIR: /drone/src/.go/tmp
+    depends_on:
+      - prepare
+
+  - name: build
+    image: ghcr.io/goreleaser/goreleaser:v1.24.0
+    commands:
+      - make build
+    environment:
+      GOCACHE: /drone/src/.go/cache
+      GOMODCACHE: /drone/src/.go/modcache
+      GOTMPDIR: /drone/src/.go/tmp
+      GITHUB_TOKEN:
+        from_secret: GITHUB_TOKEN
+    volumes:
+      - name: dockersock
+        path: /var/run/docker.sock
+    depends_on:
+      - check-license
+
+  - name: release
+    image: ghcr.io/goreleaser/goreleaser:v1.24.0
+    commands:
+      - ./scripts/drone/install-cosign.sh
+      - mkdir -p /root/.docker
+      - printf "%s" "$DOCKER_CONFIG_JSON" > /root/.docker/config.json
+      - git reset --hard
+      - git fetch --tags
+      - make release
+    environment:
+      GOCACHE: /drone/src/.go/cache
+      GOMODCACHE: /drone/src/.go/modcache
+      GOTMPDIR: /drone/src/.go/tmp
+      GITHUB_TOKEN:
+        from_secret: GITHUB_TOKEN
+      DOCKER_CONFIG_JSON:
+        from_secret: DOCKERCONFIGJSON_UCS
+      COSIGN_KEY:
+        from_secret: COSIGN_KEY
+      COSIGN_PWD:
+        from_secret: COSIGN_PASSWORD
+    volumes:
+      - name: dockersock
+        path: /var/run/docker.sock
+    depends_on:
+      - check-license
+    when:
+      ref:
+        include:
+          - refs/tags/v**
+
+volumes:
+  - name: dockersock
+    host:
+      path: /var/run/docker.sock
+
+trigger:
+  event:
+    exclude:
+      - pull_request
+      - promote
+  ref:
+    exclude:
+      - refs/tags/helm-chart-v**

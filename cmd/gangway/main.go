@@ -26,10 +26,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/heptiolabs/gangway/internal/config"
-	"github.com/heptiolabs/gangway/internal/oidc"
-	"github.com/heptiolabs/gangway/internal/session"
 	"github.com/justinas/alice"
+	"github.com/sighupio/gangway/internal/config"
+	"github.com/sighupio/gangway/internal/oidc"
+	"github.com/sighupio/gangway/internal/session"
 	"golang.org/x/oauth2"
 )
 
