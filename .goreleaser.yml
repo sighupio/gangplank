@@ -60,4 +60,4 @@ dockers:
       - "registry.sighup.io/fury/gangplank:v{{ .Major }}"
       - "registry.sighup.io/fury/gangplank:v{{ .Major }}.{{ .Minor }}"
       - "registry.sighup.io/fury/gangplank:{{ .Tag }}"
-    skip_push: false
+    skip_push: auto
