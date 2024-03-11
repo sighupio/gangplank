@@ -42,7 +42,7 @@ steps:
       - prepare
 
   - name: build
-    image: ghcr.io/goreleaser/goreleaser:v1.24.0
+    image: quay.io/sighup/golang:1.22.1
     commands:
       - make build
     environment:
@@ -58,7 +58,7 @@ steps:
       - check-license
 
   - name: release
-    image: ghcr.io/goreleaser/goreleaser:v1.24.0
+    image: quay.io/sighup/golang:1.22.1
     commands:
       - ./scripts/drone/install-cosign.sh
       - mkdir -p /root/.docker
