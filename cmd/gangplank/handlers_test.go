@@ -30,14 +30,14 @@ import (
 	"github.com/ghodss/yaml"
 
 	"github.com/gorilla/sessions"
-	"github.com/heptiolabs/gangway/internal/config"
-	"github.com/heptiolabs/gangway/internal/session"
+	"github.com/sighupio/gangplank/internal/config"
+	"github.com/sighupio/gangplank/internal/session"
 	"golang.org/x/oauth2"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api/v1"
 )
 
 func testInit() {
-	gangwayUserSession = session.New("test")
+	gangplankUserSession = session.New("test")
 	transportConfig = config.NewTransportConfig("")
 
 	oauth2Cfg = &oauth2.Config{
@@ -105,7 +105,7 @@ func TestCallbackHandler(t *testing.T) {
 			}
 
 			// Create request
-			if session, err = gangwayUserSession.Session.Get(req, "gangway"); err != nil {
+			if session, err = gangplankUserSession.Session.Get(req, "gangplank"); err != nil {
 				t.Fatalf("Error getting session: %v", err)
 			}
 
@@ -206,13 +206,13 @@ func TestCommandLineHandler(t *testing.T) {
 			}
 
 			// Create request
-			if session, err = gangwayUserSession.Session.Get(req, "gangway"); err != nil {
+			if session, err = gangplankUserSession.Session.Get(req, "gangplank"); err != nil {
 				t.Fatalf("Error getting session: %v", err)
 			}
-			if sessionIDToken, err = gangwayUserSession.Session.Get(req, "gangway_id_token"); err != nil {
+			if sessionIDToken, err = gangplankUserSession.Session.Get(req, "gangplank_id_token"); err != nil {
 				t.Fatalf("Error getting session: %v", err)
 			}
-			if sessionRefreshToken, err = gangwayUserSession.Session.Get(req, "gangway_refresh_token"); err != nil {
+			if sessionRefreshToken, err = gangplankUserSession.Session.Get(req, "gangplank_refresh_token"); err != nil {
 				t.Fatalf("Error getting session: %v", err)
 			}
 
@@ -305,7 +305,7 @@ func TestKubeconfigHandler(t *testing.T) {
 
 			// Create dummy cluster CA file
 			clusterCAData := "dummy cluster CA"
-			f, err := os.CreateTemp("", "gangway-kubeconfig-handler-test")
+			f, err := os.CreateTemp("", "gangplank-kubeconfig-handler-test")
 			if err != nil {
 				t.Fatalf("Error creating temp file: %v", err)
 			}
@@ -324,13 +324,13 @@ func TestKubeconfigHandler(t *testing.T) {
 			}
 
 			// Create request
-			if session, err = gangwayUserSession.Session.Get(req, "gangway"); err != nil {
+			if session, err = gangplankUserSession.Session.Get(req, "gangplank"); err != nil {
 				t.Fatalf("Error getting session: %v", err)
 			}
-			if sessionIDToken, err = gangwayUserSession.Session.Get(req, "gangway_id_token"); err != nil {
+			if sessionIDToken, err = gangplankUserSession.Session.Get(req, "gangplank_id_token"); err != nil {
 				t.Fatalf("Error getting session: %v", err)
 			}
-			if sessionRefreshToken, err = gangwayUserSession.Session.Get(req, "gangway_refresh_token"); err != nil {
+			if sessionRefreshToken, err = gangplankUserSession.Session.Get(req, "gangplank_refresh_token"); err != nil {
 				t.Fatalf("Error getting session: %v", err)
 			}
 

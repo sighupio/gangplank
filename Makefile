@@ -1,5 +1,5 @@
-# Copyright © 2017 Heptio
-# Copyright © 2017 Craig Tracey
+# Copyright 2017-present SIGHUP s.r.l
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -12,60 +12,101 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-PROJECT := gangway
-# Where to push the docker image.
-REGISTRY ?= gcr.io/heptio-images
-IMAGE := $(REGISTRY)/$(PROJECT)
-SRCDIRS := ./cmd/gangway
-PKGS := $(shell go list ./cmd/... ./internal/...)
+ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+SHELL := /bin/sh
+PROJECT_NAME := gangplank
 
-VERSION ?= master
+.DEFAULT_GOAL := help
 
-all: build
+# ----------------------------------------------------------------------------------------------------------------------
+# Private variables
+# ----------------------------------------------------------------------------------------------------------------------
 
-build: deps bindata
-	go build ./...
+_DOCKER_FILELINT_IMAGE=cytopia/file-lint:latest-0.8
+_DOCKER_HADOLINT_IMAGE=hadolint/hadolint:v2.12.0
+_DOCKER_JSONLINT_IMAGE=cytopia/jsonlint:1.6
+_DOCKER_MAKEFILELINT_IMAGE=cytopia/checkmake:latest-0.5
+_DOCKER_MARKDOWNLINT_IMAGE=davidanson/markdownlint-cli2:v0.8.1
+_DOCKER_SHELLCHECK_IMAGE=koalaman/shellcheck-alpine:v0.9.0
+_DOCKER_SHFMT_IMAGE=mvdan/shfmt:v3-alpine
+_DOCKER_YAMLLINT_IMAGE=cytopia/yamllint:1
+_DOCKER_CHART_TESTING_IMAGE=quay.io/helmpack/chart-testing:v3.9.0
 
-install:
-	go install -v ./cmd/gangway/...
+# TODO: replace this image with a permission-monitor-specific one
+_DOCKER_TOOLS_IMAGE=omissis/go-jsonschema:tools-latest
 
-setup:
-	go get -u github.com/mjibson/esc/...
+_PROJECT_DIRECTORY=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 
-check: test vet gofmt staticcheck misspell
+# ----------------------------------------------------------------------------------------------------------------------
+# Utility functions
+# ----------------------------------------------------------------------------------------------------------------------
 
-deps:
-	GO111MODULE=on go mod tidy && GO111MODULE=on go mod vendor && GO111MODULE=on go mod verify
+#1: docker image
+#2: script name
+define run-script-docker
+	@docker run --rm \
+		-v ${_PROJECT_DIRECTORY}:/data \
+		-w /data \
+		--entrypoint /bin/sh \
+		$(1) scripts/$(2).sh
+endef
 
-vet: | test
-	go vet ./...
+# check-variable-%: Check if the variable is defined.
+check-variable-%:
+	@[[ "${${*}}" ]] || (echo '*** Please define variable `${*}` ***' && exit 1)
 
-bindata:
-	esc -o cmd/gangway/bindata.go templates/
+# ----------------------------------------------------------------------------------------------------------------------
+# Linting Targets
+# ----------------------------------------------------------------------------------------------------------------------
 
-test:
-	go test -v ./...
+.PHONY: license-check
+license-check:
+	@addlicense -c "SIGHUP s.r.l" -y 2017-present -v -l apache \
+	-ignore "deployments/helm/permission-monitor/templates/**/*" \
+	-ignore "dist/**/*" \
+	-ignore "web-client/src/gen/**/*" \
+	-ignore "web-client/node_modules/**/*" \
+	-ignore "vendor/**/*" \
+	-ignore "*.gen.go" \
+	-ignore ".idea/*" \
+	-ignore ".vscode/*" \
+	-ignore ".go/**/*" \
+	--check .
 
-staticcheck:
-	@go get honnef.co/go/tools/cmd/staticcheck
-	staticcheck $(PKGS)
+# ----------------------------------------------------------------------------------------------------------------------
+# Formatting Targets
+# ----------------------------------------------------------------------------------------------------------------------
 
-misspell:
-	@go get github.com/client9/misspell/cmd/misspell
-	misspell \
-		-i clas \
-		-locale US \
-		-error \
-		cmd/* docs/* *.md
+.PHONY: license-add
+license-add:
+	@addlicense -c "SIGHUP s.r.l" -y 2017-present -v -l apache \
+	-ignore "deployments/helm/permission-monitor/templates/**/*" \
+	-ignore "dist/**/*" \
+	-ignore "web-client/src/gen/**/*" \
+	-ignore "web-client/node_modules/**/*" \
+	-ignore "vendor/**/*" \
+	-ignore "*.gen.go" \
+	-ignore ".idea/*" \
+	-ignore ".vscode/*" \
+	-ignore ".go/**/*" \
+	.
 
-gofmt:
-	@echo Checking code is gofmted
-	@test -z "$(shell gofmt -s -l -d -e $(SRCDIRS) | tee /dev/stderr)"
+# ----------------------------------------------------------------------------------------------------------------------
+# Golang Targets
+# ----------------------------------------------------------------------------------------------------------------------
 
-image:
-	docker build . -t $(IMAGE):$(VERSION)
+.PHONY: tools-go
+tools-go:
+	@scripts/tools-golang.sh
 
-push:
-	docker push $(IMAGE):$(VERSION)
+.PHONY: tools-brew
+tools-brew:
+	@scripts/tools-brew.sh
 
-.PHONY: all deps bindata test image setup
+.PHONY: build
+build:
+	@scripts/build.sh
+
+.PHONY: release
+release:
+	@scripts/release.sh

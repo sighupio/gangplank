@@ -1,1 +1,3 @@
-golang 1.22.0
+golang 1.22.1
+make 4.4.1
+goreleaser 1.24.0

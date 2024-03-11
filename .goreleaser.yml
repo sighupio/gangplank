@@ -1,0 +1,63 @@
+# Copyright 2017-present SIGHUP s.r.l
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+project_name: gangplank
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goarch:
+      - amd64
+      - arm64
+    goos:
+      - linux
+    main: ./cmd/gangplank
+
+archives:
+  - name_template: "{{ tolower .ProjectName }}-{{ tolower .Os }}-{{ tolower .Arch }}"
+
+checksum:
+  name_template: checksums.txt
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-develop"
+
+changelog:
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+  sort: asc
+
+release:
+  github:
+    owner: sighupio
+    name: gangplank
+  name_template: "{{ .Tag }}"
+  prerelease: auto
+
+dockers:
+  - dockerfile: ./Dockerfile
+    extra_files:
+      - ./
+    image_templates:
+      - "registry.sighup.io/fury/gangplank:latest"
+      - "registry.sighup.io/fury/gangplank:v{{ .Major }}"
+      - "registry.sighup.io/fury/gangplank:v{{ .Major }}.{{ .Minor }}"
+      - "registry.sighup.io/fury/gangplank:{{ .Tag }}"
+    skip_push: auto

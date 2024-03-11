@@ -16,13 +16,14 @@ package session
 
 import (
 	"crypto/sha256"
-	"golang.org/x/crypto/pbkdf2"
 	"net/http"
+
+	"golang.org/x/crypto/pbkdf2"
 )
 
 const salt = "MkmfuPNHnZBBivy0L0aW"
 
-// Session defines a Gangway session
+// Session defines a Gangplank session
 type Session struct {
 	Session *CustomCookieStore
 }

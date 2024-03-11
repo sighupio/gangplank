@@ -1,3 +1,4 @@
+#!/bin/sh
 # Copyright 2017-present SIGHUP s.r.l
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,15 +13,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: steve-admin
-subjects:
-  - kind: User
-    name: steves@heptio.com
-    apiGroup: rbac.authorization.k8s.io
-roleRef:
-  kind: ClusterRole #this must be Role or ClusterRole
-  name: cluster-admin # this must match the name of the Role or ClusterRole you wish to bind to
-  apiGroup: rbac.authorization.k8s.io
+set -e
+set -o errexit -o nounset
