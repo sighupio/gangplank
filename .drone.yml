@@ -56,11 +56,14 @@ steps:
         path: /var/run/docker.sock
     depends_on:
       - check-license
+    when:
+      ref:
+        exclude:
+          - refs/tags/v**
 
   - name: release
     image: quay.io/sighup/golang:1.22.1
     commands:
-      - ./scripts/drone/install-cosign.sh
       - mkdir -p /root/.docker
       - printf "%s" "$DOCKER_CONFIG_JSON" > /root/.docker/config.json
       - git reset --hard
@@ -73,7 +76,7 @@ steps:
       GITHUB_TOKEN:
         from_secret: GITHUB_TOKEN
       DOCKER_CONFIG_JSON:
-        from_secret: DOCKERCONFIGJSON_UCS
+        from_secret: DOCKERCONFIGJSON_FURY
       COSIGN_KEY:
         from_secret: COSIGN_KEY
       COSIGN_PWD:

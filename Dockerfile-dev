@@ -12,8 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM scratch
+FROM golang:1.22.1-alpine
 
-COPY gangplank /usr/local/bin/gangplank
+ENV CGO_ENABLED=0
 
-ENTRYPOINT ["gangplank"]
+WORKDIR /src
+
+COPY . .
+
+RUN go mod download
+
+ENTRYPOINT [ "go", "run", "./cmd/gangplank" ]

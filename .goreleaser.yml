@@ -43,6 +43,7 @@ changelog:
       - "^docs:"
       - "^test:"
   sort: asc
+  use: github-native
 
 release:
   github:
@@ -52,12 +53,52 @@ release:
   prerelease: auto
 
 dockers:
-  - dockerfile: ./Dockerfile
-    extra_files:
-      - ./
+  - build_flag_templates:
+      - --platform=linux/amd64
     image_templates:
-      - "registry.sighup.io/fury/gangplank:latest"
-      - "registry.sighup.io/fury/gangplank:v{{ .Major }}"
-      - "registry.sighup.io/fury/gangplank:v{{ .Major }}.{{ .Minor }}"
-      - "registry.sighup.io/fury/gangplank:{{ .Tag }}"
+      - registry.sighup.io/fury/gangplank-amd64:latest
+      - registry.sighup.io/fury/gangplank-amd64:{{ .Major }}
+      - registry.sighup.io/fury/gangplank-amd64:{{ .Major }}.{{ .Minor }}
+      - registry.sighup.io/fury/gangplank-amd64:{{ .Major }}.{{ .Minor }}.{{ .Patch }}
     skip_push: auto
+
+  - build_flag_templates:
+      - --platform=linux/arm64
+    goarch: arm64
+    image_templates:
+      - registry.sighup.io/fury/gangplank-arm64:latest
+      - registry.sighup.io/fury/gangplank-arm64:{{ .Major }}
+      - registry.sighup.io/fury/gangplank-arm64:{{ .Major }}.{{ .Minor }}
+      - registry.sighup.io/fury/gangplank-arm64:{{ .Major }}.{{ .Minor }}.{{ .Patch }}
+    skip_push: auto
+
+docker_manifests:
+  - name_template: registry.sighup.io/fury/gangplank:latest
+    image_templates:
+      - registry.sighup.io/fury/gangplank-amd64:latest
+      - registry.sighup.io/fury/gangplank-arm64:latest
+
+  - name_template: registry.sighup.io/fury/gangplank:{{ .Major }}
+    image_templates:
+      - registry.sighup.io/fury/gangplank-amd64:{{ .Major }}
+      - registry.sighup.io/fury/gangplank-arm64:{{ .Major }}
+
+  - name_template: registry.sighup.io/fury/gangplank:{{ .Major }}.{{ .Minor }}
+    image_templates:
+      - registry.sighup.io/fury/gangplank-amd64:{{ .Major }}.{{ .Minor }}
+      - registry.sighup.io/fury/gangplank-arm64:{{ .Major }}.{{ .Minor }}
+
+  - name_template: registry.sighup.io/fury/gangplank:{{ .Major }}.{{ .Minor }}.{{ .Patch }}
+    image_templates:
+      - registry.sighup.io/fury/gangplank-amd64:{{ .Major }}.{{ .Minor }}.{{ .Patch }}
+      - registry.sighup.io/fury/gangplank-arm64:{{ .Major }}.{{ .Minor }}.{{ .Patch }}
+
+docker_signs:
+  - artifacts: all
+    stdin: "{{ .Env.COSIGN_PWD }}"
+    args:
+      - sign
+      - --key=env://COSIGN_KEY
+      - --upload=true
+      - ${artifact}
+      - --yes
