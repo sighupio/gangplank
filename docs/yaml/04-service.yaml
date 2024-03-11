@@ -15,10 +15,10 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name: gangwaysvc
-  namespace: gangway
+  name: gangplanksvc
+  namespace: gangplank
   labels:
-    app: gangway
+    app: gangplank
 spec:
   type: ClusterIP
   ports:
@@ -27,4 +27,4 @@ spec:
       port: 80
       targetPort: "http"
   selector:
-    app: gangway
+    app: gangplank

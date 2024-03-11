@@ -14,7 +14,7 @@
 
 ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 SHELL := /bin/sh
-PROJECT_NAME := gangway
+PROJECT_NAME := gangplank
 
 .DEFAULT_GOAL := help
 

@@ -15,14 +15,14 @@
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
-  name: gangway
-  namespace: gangway
+  name: gangplank
+  namespace: gangplank
   annotations:
     kubernetes.io/tls-acme: "true"
     certmanager.k8s.io/cluster-issuer: "letsencrypt-staging"
 spec:
   tls:
-    - secretName: gangway
+    - secretName: gangplank
       hosts:
         - ${GANGWAY_HOST}
   rules:
@@ -30,5 +30,5 @@ spec:
       http:
         paths:
           - backend:
-              serviceName: gangwaysvc
+              serviceName: gangplanksvc
               servicePort: http

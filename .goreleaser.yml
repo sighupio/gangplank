@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-project_name: gangway
+project_name: gangplank
 
 before:
   hooks:
     - go mod tidy
 
 builds:
-  - main: ./cmd/gangway
+  - main: ./cmd/gangplank
     env:
       - CGO_ENABLED=0
     goos:
@@ -56,17 +56,17 @@ changelog:
 release:
   github:
     owner: sighupio
-    name: gangway
+    name: gangplank
   name_template: "{{ .Tag }}"
   prerelease: auto
 
 dockers:
   - skip_push: auto
     image_templates:
-      - "registry.sighup.io/gangway/gangway:latest"
-      - "registry.sighup.io/gangway/gangway:v{{ .Major }}"
-      - "registry.sighup.io/gangway/gangway:v{{ .Major }}.{{ .Minor }}"
-      - "registry.sighup.io/gangway/gangway:{{ .Tag }}"
+      - "registry.sighup.io/fury/gangplank:latest"
+      - "registry.sighup.io/fury/gangplank:v{{ .Major }}"
+      - "registry.sighup.io/fury/gangplank:v{{ .Major }}.{{ .Minor }}"
+      - "registry.sighup.io/fury/gangplank:{{ .Tag }}"
     dockerfile: ./Dockerfile
 #
 # docker_signs:

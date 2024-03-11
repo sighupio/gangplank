@@ -1,28 +1,29 @@
-# Connecting gangway to Google
-It is possible to use Google as an OAuth provider with gangway. To do so follow the instructions below:
+# Connecting gangplank to Google
+
+It is possible to use Google as an OAuth provider with gangplank. To do so follow the instructions below:
 
 ## Setting Up Google OAuth
 
-* Head to Credentials area of Google Cloud: `https://console.cloud.google.com/apis/credentials?project=<your-google-cloud-project-name>`.
-If previously you haven't created any credentials, you should see an empty list
+- Head to Credentials area of Google Cloud: `https://console.cloud.google.com/apis/credentials?project=<your-google-cloud-project-name>`.
+  If previously you haven't created any credentials, you should see an empty list
 
 ![google oauth empty list](images/goauth-empty.png)
 
-* In that page, click on "Create credentials". A menu will pop-over. From that menu click on "OAuth client ID".
+- In that page, click on "Create credentials". A menu will pop-over. From that menu click on "OAuth client ID".
 
 ![google oauth menu](images/goauth-add-credentials-menu.png)
 
-* In the page you will land, choose "Web application" for the type, then give the oath client id a name and fill in the the callback url appropriately, then click "Create".
+- In the page you will land, choose "Web application" for the type, then give the oath client id a name and fill in the the callback url appropriately, then click "Create".
 
 ![google oauth settings](images/goauth-client-settings.png)
 
-* If successful, you'll be prompted in the modal window if you want to copy the client id and secret. Click "OK" to close.
+- If successful, you'll be prompted in the modal window if you want to copy the client id and secret. Click "OK" to close.
 
-* In the list, you should see the credentials we just created. To the right, there are 3 action icons. Click on the downward "download" arrow.
+- In the list, you should see the credentials we just created. To the right, there are 3 action icons. Click on the downward "download" arrow.
 
-## Configuring gangway
+## Configuring gangplank
 
-You now need to configure gangway.
+You now need to configure gangplank.
 Here is a typical config file:
 
 ```yaml
@@ -51,7 +52,7 @@ clientSecret: "FRGegerwgfsFE_fefdsf"
 audience: "923798723208-9pq62pkrnbhumipnqs4v0a1iu7ij01fo.apps.googleusercontent.com"
 
 # Where to redirect back to. This should be a URL
-# Where gangway is reachable. Cannot be a raw IP address. Must be a valid TLD.
+# Where gangplank is reachable. Cannot be a raw IP address. Must be a valid TLD.
 redirectUrl: "https://url.kuberneters.cluster.com/callback"
 
 # Used to specify the scope of the requested authorisation in OAuth.

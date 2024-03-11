@@ -27,16 +27,16 @@ import (
 	"time"
 
 	"github.com/justinas/alice"
-	"github.com/sighupio/gangway/internal/config"
-	"github.com/sighupio/gangway/internal/oidc"
-	"github.com/sighupio/gangway/internal/session"
+	"github.com/sighupio/gangplank/internal/config"
+	"github.com/sighupio/gangplank/internal/oidc"
+	"github.com/sighupio/gangplank/internal/session"
 	"golang.org/x/oauth2"
 )
 
 var cfg *config.Config
 var oauth2Cfg *oauth2.Config
 var o2token oidc.OAuth2Token
-var gangwayUserSession *session.Session
+var gangplankUserSession *session.Session
 var transportConfig *config.TransportConfig
 
 // wrapper function for http logging
@@ -85,7 +85,7 @@ func main() {
 	}
 
 	transportConfig = config.NewTransportConfig(cfg.TrustedCAPath)
-	gangwayUserSession = session.New(cfg.SessionSecurityKey)
+	gangplankUserSession = session.New(cfg.SessionSecurityKey)
 
 	loginRequiredHandlers := alice.New(loginRequired)
 
@@ -126,7 +126,7 @@ func main() {
 
 	// start up the http server
 	go func() {
-		slog.Info("Gangway started", "address", bindAddr)
+		slog.Info("Gangplank started", "address", bindAddr)
 
 		// exit with FATAL logging why we could not start
 		// example: FATA[0000] listen tcp 0.0.0.0:8080: bind: address already in use

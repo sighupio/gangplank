@@ -1,4 +1,4 @@
-module github.com/sighupio/gangway
+module github.com/sighupio/gangplank
 
 go 1.22
 

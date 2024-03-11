@@ -15,10 +15,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: gangway
-  namespace: gangway
+  name: gangplank
+  namespace: gangplank
 data:
-  gangway.yaml: |
+  gangplank.yaml: |
     # The address to listen on. Defaults to 0.0.0.0 to listen on all interfaces.
     # Env var: GANGWAY_HOST
     # host: 0.0.0.0
@@ -27,18 +27,18 @@ data:
     # Env var: GANGWAY_PORT
     # port: 8080
 
-    # Should Gangway serve TLS vs. plain HTTP? Default: false
+    # Should Gangplank serve TLS vs. plain HTTP? Default: false
     # Env var: GANGWAY_SERVE_TLS
     # serveTLS: false
 
     # The public cert file (including root and intermediates) to use when serving
     # TLS.
     # Env var: GANGWAY_CERT_FILE
-    # certFile: /etc/gangway/tls/tls.crt
+    # certFile: /etc/gangplank/tls/tls.crt
 
     # The private key file when serving TLS.
     # Env var: GANGWAY_KEY_FILE
-    # keyFile: /etc/gangway/tls/tls.key
+    # keyFile: /etc/gangplank/tls/tls.key
 
     # The cluster name. Used in UI and kubectl config instructions.
     # Env var: GANGWAY_CLUSTER_NAME
@@ -60,7 +60,7 @@ data:
     # Used to specify the scope of the requested Oauth authorization.
     # scopes: ["openid", "profile", "email", "offline_access"]
 
-    # Where to redirect back to. This should be a URL where gangway is reachable.
+    # Where to redirect back to. This should be a URL where gangplank is reachable.
     # Typically this also needs to be registered as part of the oauth application
     # with the oAuth provider.
     # Env var: GANGWAY_REDIRECT_URL
@@ -100,7 +100,7 @@ data:
     # Env var: GANGWAY_TRUSTED_CA_PATH
     #trustedCAPath: /cacerts/rootca.crt
 
-    # The path gangway uses to create urls (defaults to "")
+    # The path gangplank uses to create urls (defaults to "")
     # Env var: GANGWAY_HTTP_PATH
     #httpPath: "https://${GANGWAY_HTTP_PATH}"
 

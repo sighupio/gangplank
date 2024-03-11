@@ -16,20 +16,20 @@ FROM golang:1.22.1-alpine as dev
 
 ENV CGO_ENABLED=0
 
-WORKDIR /tmp/gangway
+WORKDIR /tmp/gangplank
 
 COPY . .
 
 RUN go mod download
 
-ENTRYPOINT [ "go", "run", "./cmd/gangway" ]
+ENTRYPOINT [ "go", "run", "./cmd/gangplank" ]
 
 FROM dev as builder
 
-RUN go build ./cmd/gangway
+RUN go build ./cmd/gangplank
 
 FROM scratch
 
-COPY --from=builder /tmp/gangway/gangway /urs/local/bin/gangway
+COPY --from=builder /tmp/gangplank/gangplank /urs/local/bin/gangplank
 
-ENTRYPOINT ["gangway"]
+ENTRYPOINT ["gangplank"]

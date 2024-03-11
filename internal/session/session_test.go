@@ -45,8 +45,8 @@ func TestCleanupSession(t *testing.T) {
 	session := &sessions.Session{}
 	// create a test http server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		session, _ = s.Session.Get(r, "gangway")
-		s.Cleanup(w, r, "gangway")
+		session, _ = s.Session.Get(r, "gangplank")
+		s.Cleanup(w, r, "gangplank")
 
 	}))
 	defer ts.Close()

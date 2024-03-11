@@ -23,7 +23,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// Config the configuration field for gangway
+// Config the configuration field for gangplank
 type Config struct {
 	Host string `yaml:"host"`
 	Port int    `yaml:"port"`
@@ -62,8 +62,8 @@ func NewConfig(configFile string) (*Config, error) {
 		UsernameClaim:          "nickname",
 		EmailClaim:             "",
 		ServeTLS:               false,
-		CertFile:               "/etc/gangway/tls/tls.crt",
-		KeyFile:                "/etc/gangway/tls/tls.key",
+		CertFile:               "/etc/gangplank/tls/tls.crt",
+		KeyFile:                "/etc/gangplank/tls/tls.key",
 		ClusterCAPath:          "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
 		HTTPPath:               "",
 	}
@@ -80,7 +80,7 @@ func NewConfig(configFile string) (*Config, error) {
 		}
 	}
 
-	err := envconfig.Process("gangway", cfg)
+	err := envconfig.Process("gangplank", cfg)
 	if err != nil {
 		return nil, err
 	}

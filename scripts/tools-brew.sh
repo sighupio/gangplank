@@ -16,5 +16,3 @@
 
 set -e
 set -o errexit -o nounset
-
-go install github.com/google/addlicense@latest

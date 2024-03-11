@@ -66,8 +66,8 @@ func TestGetRootPathPrefix(t *testing.T) {
 			want: "/",
 		},
 		"specified": {
-			path: "/gangway",
-			want: "/gangway",
+			path: "/gangplank",
+			want: "/gangplank",
 		},
 		"specified default": {
 			path: "/",
