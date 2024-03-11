@@ -152,7 +152,7 @@ func TestCommandLineHandler(t *testing.T) {
 				"code":          "0cj0VQzNl36e4P2L&state=jdep4ov52FeUuzWLDDtSXaF4b5%2F%2FCUJ52xlE69ehnQ8%3D",
 			},
 			expectedStatusCode:         http.StatusOK,
-			expectedUsernameInTemplate: "gangplank@heptio.com",
+			expectedUsernameInTemplate: "gangway@heptio.com",
 			emailClaim:                 "Email",
 			usernameClaim:              "sub",
 		},
@@ -175,7 +175,7 @@ func TestCommandLineHandler(t *testing.T) {
 				"code":          "0cj0VQzNl36e4P2L&state=jdep4ov52FeUuzWLDDtSXaF4b5%2F%2FCUJ52xlE69ehnQ8%3D",
 			},
 			expectedStatusCode:         http.StatusOK,
-			expectedUsernameInTemplate: "gangplank@heptio.com@cluster1",
+			expectedUsernameInTemplate: "gangway@heptio.com@cluster1",
 			usernameClaim:              "sub",
 		},
 	}
@@ -283,13 +283,13 @@ func TestKubeconfigHandler(t *testing.T) {
 			},
 			expectedStatusCode:   http.StatusOK,
 			usernameClaim:        "sub",
-			expectedAuthInfoName: "gangplank@heptio.com@cluster1",
+			expectedAuthInfoName: "gangway@heptio.com@cluster1",
 			expectedAuthInfoAuthProviderConfig: map[string]string{
 				"client-id":      "someClientID",
 				"client-secret":  "someClientSecret",
 				"id-token":       "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJHYW5nd2F5VGVzdCIsImlhdCI6MTU0MDA0NjM0NywiZXhwIjoxODg3MjAxNTQ3LCJhdWQiOiJnYW5nd2F5LmhlcHRpby5jb20iLCJzdWIiOiJnYW5nd2F5QGhlcHRpby5jb20iLCJHaXZlbk5hbWUiOiJHYW5nIiwiU3VybmFtZSI6IldheSIsIkVtYWlsIjoiZ2FuZ3dheUBoZXB0aW8uY29tIiwiR3JvdXBzIjoiZGV2LGFkbWluIn0.zNG4Dnxr76J0p4phfsAUYWunioct0krkMiunMynlQsU",
 				"refresh-token":  "bar",
-				"idp-issuer-url": "GangplankTest",
+				"idp-issuer-url": "GangwayTest",
 			},
 		},
 	}

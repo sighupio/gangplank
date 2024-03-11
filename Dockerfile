@@ -30,6 +30,6 @@ RUN go build ./cmd/gangplank
 
 FROM scratch
 
-COPY --from=builder /tmp/gangplank/gangplank /urs/local/bin/gangplank
+COPY --from=builder /tmp/gangplank/gangplank /usr/local/bin/gangplank
 
 ENTRYPOINT ["gangplank"]

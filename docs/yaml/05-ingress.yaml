@@ -24,9 +24,9 @@ spec:
   tls:
     - secretName: gangplank
       hosts:
-        - ${GANGWAY_HOST}
+        - ${GANGPLANK_HOST}
   rules:
-    - host: ${GANGWAY_HOST}
+    - host: ${GANGPLANK_HOST}
       http:
         paths:
           - backend:

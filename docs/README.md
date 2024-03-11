@@ -29,7 +29,7 @@ kubectl -n gangplank create secret generic gangplank-key \
 Gangplank takes an optional path prefix if you want to host it at a url other than '/' (e.g. `https://example.com/gangplank`).
 By configuring this parameter, all redirects will have the proper path appended to the url parameters.
 
-This variable can be configured via the [ConfigMap](https://github.com/sighup/gangplank/blob/master/docs/yaml/02-config.yaml#L81) or via environment variable (`GANGWAY_HTTP_PATH`).
+This variable can be configured via the [ConfigMap](https://github.com/sighup/gangplank/blob/master/docs/yaml/02-config.yaml#L81) or via environment variable (`GANGPLANK_HTTP_PATH`).
 
 ## Detailed Instructions
 
