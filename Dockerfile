@@ -16,7 +16,7 @@ FROM golang:1.22.1-alpine as dev
 
 ENV CGO_ENABLED=0
 
-WORKDIR /tmp/gangplank
+WORKDIR /src
 
 COPY . .
 
@@ -30,6 +30,6 @@ RUN go build ./cmd/gangplank
 
 FROM scratch
 
-COPY --from=builder /tmp/gangplank/gangplank /usr/local/bin/gangplank
+COPY --from=builder /src/gangplank /usr/local/bin/gangplank
 
 ENTRYPOINT ["gangplank"]

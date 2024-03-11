@@ -19,39 +19,30 @@ before:
     - go mod tidy
 
 builds:
-  - main: ./cmd/gangplank
-    env:
+  - env:
       - CGO_ENABLED=0
-    goos:
-      - linux
-      - darwin
     goarch:
       - amd64
       - arm64
-    # ldflags:
-    #   - >
-    #     -s -w
-    #     -X main.version={{.Version}}
-    #     -X main.gitCommit={{.Commit}}
-    #     -X main.buildTime={{.Date}}
-    #     -X main.goVersion={{.Env.GO_VERSION}}
-    #     -X main.osArch={{.Arch}}
+    goos:
+      - linux
+    main: ./cmd/gangplank
 
 archives:
   - name_template: "{{ tolower .ProjectName }}-{{ tolower .Os }}-{{ tolower .Arch }}"
 
 checksum:
-  name_template: "checksums.txt"
+  name_template: checksums.txt
 
 snapshot:
   name_template: "{{ incpatch .Version }}-develop"
 
 changelog:
-  sort: asc
   filters:
     exclude:
       - "^docs:"
       - "^test:"
+  sort: asc
 
 release:
   github:
@@ -61,20 +52,12 @@ release:
   prerelease: auto
 
 dockers:
-  - skip_push: auto
+  - dockerfile: ./Dockerfile
+    extra_files:
+      - ./
     image_templates:
       - "registry.sighup.io/fury/gangplank:latest"
       - "registry.sighup.io/fury/gangplank:v{{ .Major }}"
       - "registry.sighup.io/fury/gangplank:v{{ .Major }}.{{ .Minor }}"
       - "registry.sighup.io/fury/gangplank:{{ .Tag }}"
-    dockerfile: ./Dockerfile
-#
-# docker_signs:
-#   - artifacts: all
-#     stdin: "{{ .Env.COSIGN_PWD }}"
-#     args:
-#       - "sign"
-#       - "--key=env://COSIGN_KEY"
-#       - "--upload=true"
-#       - "--yes"
-#       - "${artifact}"
+    skip_push: auto
