@@ -62,14 +62,8 @@ check-variable-%:
 .PHONY: license-check
 license-check:
 	@addlicense -c "SIGHUP s.r.l" -y 2017-present -v -l apache \
-	-ignore "deployments/helm/permission-monitor/templates/**/*" \
+	-ignore "deployments/helm/templates/**/*" \
 	-ignore "dist/**/*" \
-	-ignore "web-client/src/gen/**/*" \
-	-ignore "web-client/node_modules/**/*" \
-	-ignore "vendor/**/*" \
-	-ignore "*.gen.go" \
-	-ignore ".idea/*" \
-	-ignore ".vscode/*" \
 	-ignore ".go/**/*" \
 	--check .
 
@@ -80,14 +74,8 @@ license-check:
 .PHONY: license-add
 license-add:
 	@addlicense -c "SIGHUP s.r.l" -y 2017-present -v -l apache \
-	-ignore "deployments/helm/permission-monitor/templates/**/*" \
+	-ignore "deployments/helm/templates/**/*" \
 	-ignore "dist/**/*" \
-	-ignore "web-client/src/gen/**/*" \
-	-ignore "web-client/node_modules/**/*" \
-	-ignore "vendor/**/*" \
-	-ignore "*.gen.go" \
-	-ignore ".idea/*" \
-	-ignore ".vscode/*" \
 	-ignore ".go/**/*" \
 	.
 

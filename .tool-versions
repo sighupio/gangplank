@@ -1,3 +1,5 @@
 golang 1.22.1
 make 4.4.1
 goreleaser 1.24.0
+tilt 0.33.11
+ctlptl 0.8.28

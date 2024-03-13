@@ -1,65 +1,65 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0"/>
-  <title>Heptio Gangplank</title>
-
-  <!-- CSS  -->
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css">
-  <style>
-    pre.bash {
-        background-color: black;
-        color: #49fb35;
-        font-size: small;
-        font-family: Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace;
-        overflow: auto;
-        word-wrap: normal;
-        white-space: pre;
-    }
-
-    .icon-block {
-    padding: 0 15px;
-    }
-    .icon-block .material-icons {
-        font-size: inherit;
-    }
-</style>
-</head>
-<body>
-  <nav class="light-blue blue" role="navigation">
-    <div class="nav-wrapper container"><a id="logo-container" href="#" class="brand-logo">gangplank</a>
-      <ul class="right hide-on-med-and-down">
-
-      </ul>
-
-      <ul id="nav-mobile" class="side-nav">
-
-      </ul>
-      <a href="#" data-activates="nav-mobile" class="button-collapse"><i class="material-icons">menu</i></a>
-    </div>
-  </nav>
-  <div class="section no-pad-bot" id="index-banner">
-    <div class="container">
-      <br><br>
-      <h1 class="header center darken-3">Heptio Gangplank Kubernetes Authentication</h1>
-      <div class="row center">
-        <h5 class="header col s12 light">This utility will help you authenticate with your Kubernetes cluster with an OpenID Connect (OIDC) flow. Sign in to get started.</h5>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Gangplank</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:slnt,wght@-10,300..700;0,300..700&family=Roboto+Mono:ital,wght@0,400..700;1,400..700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      media="screen"
+      href="{{ .HTTPPath }}/static/style.css"
+    />
+  </head>
+  <body style="height: 100%">
+    <div
+      class="euiFlexGroup euiFlexGroup-l-flexStart-stretch-column"
+      style="height: 100%"
+    >
+      <div class="euiFlexItem euiFlexItem-growZero">
+        <div
+          class="euiHeader euiHeader-static-default"
+          style="padding: 40px 0px"
+        >
+          <div class="euiFlexGroup euiFlexGroup-l-center-center-column">
+            <div class="euiFlexItem euiFlexItem-growZero">
+              <div class="euiText euiText-m">
+                <h1>Gangplank</h1>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="row center">
-        <a href="{{ .HTTPPath }}/login" id="download-button" class="btn-large waves-effect waves-light blue">Sign In</a>
+      <div class="euiFlexItem euiFlexItem-grow-1" style="padding: 0px 40px">
+        <div class="euiFlexGroup euiFlexGroup-l-center-center-column">
+          <div class="euiFlexItem euiFlexItem-growZero">
+            <div class="euiText euiText-m-euiTextAlign-center">
+              <h1>SIGHUP Gangplank Kubernetes Authentication</h1>
+              <p>
+                This utility will help you authenticate with your Kubernetes
+                cluster with an OpenID Connect (OIDC) flow. Sign in to get
+                started.
+              </p>
+            </div>
+          </div>
+          <div class="euiFlexItem euiFlexItem-growZero">
+            <a
+              href="{{ .HTTPPath }}/login"
+              rel="noreferrer"
+              class="euiButton euiButtonDisplay-m-defaultMinWidth-base-primary"
+            >
+              <span class="euiButtonDisplayContent">
+                <span class="eui-textTruncate">Sign in</span>
+              </span>
+            </a>
+          </div>
+        </div>
       </div>
-      <br><br>
-
     </div>
-  </div>
-
-
-  <!--  Scripts-->
-  <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
-  <script src="js/materialize.js"></script>
-  <script src="js/init.js"></script>
-
   </body>
 </html>

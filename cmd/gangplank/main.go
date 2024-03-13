@@ -30,6 +30,7 @@ import (
 	"github.com/sighupio/gangplank/internal/config"
 	"github.com/sighupio/gangplank/internal/oidc"
 	"github.com/sighupio/gangplank/internal/session"
+	"github.com/sighupio/gangplank/static"
 	"golang.org/x/oauth2"
 )
 
@@ -90,6 +91,7 @@ func main() {
 	loginRequiredHandlers := alice.New(loginRequired)
 
 	http.HandleFunc(cfg.GetRootPathPrefix(), httpLogger(homeHandler))
+	http.HandleFunc(fmt.Sprintf("%s/static/", cfg.HTTPPath), httpLogger(http.StripPrefix(fmt.Sprintf("%s/static/", cfg.HTTPPath), http.FileServerFS(static.FS)).ServeHTTP))
 	http.HandleFunc(fmt.Sprintf("%s/login", cfg.HTTPPath), httpLogger(loginHandler))
 	http.HandleFunc(fmt.Sprintf("%s/callback", cfg.HTTPPath), httpLogger(callbackHandler))
 
