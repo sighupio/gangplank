@@ -158,6 +158,7 @@ html {
   flex-direction: column;
   flex-grow: 0;
   flex-basis: auto;
+  width: 100%;
 }
 
 .euiHeader-static-default {
@@ -437,7 +438,7 @@ section {
 .euiCodeBlock__pre-preWrap-padding {
   block-size: 100%;
   overflow: auto;
-  display: block;
+  display: flex;
   scrollbar-width: thin;
   scrollbar-color: rgba(152, 162, 179, 0.5) transparent;
   white-space: pre-wrap;
@@ -455,9 +456,11 @@ samp {
   font-family: "Roboto Mono", Menlo, Courier, monospace;
   font-size: inherit;
   color: #dfe5ef;
-  display: block;
+  display: flex;
+  flex-direction: column;
 }
 
 .euiCodeBlock__line {
   display: block;
+  margin: 8px 0;
 }
