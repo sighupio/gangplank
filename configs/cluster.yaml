@@ -12,23 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: networking.k8s.io/v1beta1
-kind: Ingress
-metadata:
+apiVersion: ctlptl.dev/v1alpha1
+kind: Cluster
+product: kind
+registry: gangplank-registry
+kindV1Alpha4Cluster:
   name: gangplank
-  namespace: gangplank
-  annotations:
-    kubernetes.io/tls-acme: "true"
-    certmanager.k8s.io/cluster-issuer: "letsencrypt-staging"
-spec:
-  tls:
-    - secretName: gangplank
-      hosts:
-        - ${GANGPLANK_CONFIG_HOST}
-  rules:
-    - host: ${GANGPLANK_CONFIG_HOST}
-      http:
-        paths:
-          - backend:
-              serviceName: gangplanksvc
-              servicePort: http
+  nodes:
+    - role: control-plane
+      image: kindest/node:v1.29.2

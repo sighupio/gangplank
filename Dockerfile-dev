@@ -18,8 +18,11 @@ ENV CGO_ENABLED=0
 
 WORKDIR /src
 
-COPY . .
+COPY ./cmd /src/cmd
+COPY ./internal /src/internal
+COPY ./static /src/static
+COPY ./templates /src/templates
+COPY ./go.mod /src/go.mod
+COPY ./go.sum /src/go.sum
 
 RUN go mod download
-
-ENTRYPOINT [ "go", "run", "./cmd/gangplank" ]

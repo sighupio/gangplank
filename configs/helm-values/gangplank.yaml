@@ -12,23 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: networking.k8s.io/v1beta1
-kind: Ingress
-metadata:
-  name: gangplank
-  namespace: gangplank
-  annotations:
-    kubernetes.io/tls-acme: "true"
-    certmanager.k8s.io/cluster-issuer: "letsencrypt-staging"
-spec:
-  tls:
-    - secretName: gangplank
-      hosts:
-        - ${GANGPLANK_CONFIG_HOST}
-  rules:
-    - host: ${GANGPLANK_CONFIG_HOST}
-      http:
-        paths:
-          - backend:
-              serviceName: gangplanksvc
-              servicePort: http
+command:
+  ["go", "run", "./cmd/gangplank", "-config", "/etc/gangplank/config.yaml"]
+
+config:
+  authorizeURL: http://localhost:5556/auth
+  tokenURL: http://dex.dex:5556/token
+  audience: http://dex.dex:5556/userinfo
+  redirectURL: http://localhost:8080/callback
+  usernameClaim: email
+  clientID: gangplank
+  clientSecret: gangplank

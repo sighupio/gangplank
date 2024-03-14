@@ -1,107 +1,113 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0"/>
-  <title>Gangplank</title>
-
-  <!-- CSS  -->
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css">
-
-  <!-- Prism -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/prism.min.js" integrity="sha256-jTGzLAqOAcOL+ALD2f2tvFY7fs6dwkOeo88xiuVHaRk=" crossorigin="anonymous"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/components/prism-bash.min.js" integrity="sha256-Ch5rv5tgAdVMCh7Wqb0UOcXkQAHNFSezi+0v/0z6xfw=" crossorigin="anonymous"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/components/prism-yaml.min.js" integrity="sha256-pxsoS7PqPuy6D5T0Dq2PEXKJ5SRlIkdG8hpoMxQ0YlM=" crossorigin="anonymous"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/themes/prism-tomorrow.min.css" integrity="sha256-4S9ufRr1EqaUFFeM9/52GH68Hs1Sbvx8eFXBWpl8zPI=" crossorigin="anonymous" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/plugins/toolbar/prism-toolbar.min.css" integrity="sha256-xY7/SUa769r0PZ1ytZPFj2WqnOZYaYSKbX1hVTiQlcA=" crossorigin="anonymous" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/plugins/toolbar/prism-toolbar.min.js" integrity="sha256-OvKYJLcYRP3ZIPilT03rynyZfkdGFwzCwU82NB4/AT4=" crossorigin="anonymous"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.14.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js" integrity="sha256-s+Z1sBUQFaaw7xeAnWb/oS8gBM4MEKiEWMRJ0p+/xbc=" crossorigin="anonymous"></script>
-  <style>
-      .code-toolbar {
-          margin-bottom: 2em;
-      }
-  </style>
-</head>
-    <body>
-        <nav class="light-blue blue" role="navigation">
-            <div class="nav-wrapper container"><a id="logo-container" href="#" class="brand-logo">gangplank</a>
-            <ul class="right hide-on-med-and-down">
-                <li><a href="{{ .HTTPPath }}/logout">Logout</a></li>
-            </ul>
-
-            <ul id="nav-mobile" class="side-nav">
-                <li><a href="#">Decode JWT</a></li>
-            </ul>
-            <a href="#" data-activates="nav-mobile" class="button-collapse"><i class="material-icons">menu</i></a>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Gangplank</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:slnt,wght@-10,300..700;0,300..700&family=Roboto+Mono:ital,wght@0,400..700;1,400..700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      media="screen"
+      href="{{ .HTTPPath }}/static/style.css"
+    />
+  </head>
+  <body style="height: 100%">
+    <div
+      class="euiFlexGroup euiFlexGroup-l-flexStart-stretch-column"
+      style="height: 100%"
+    >
+      <div class="euiFlexItem euiFlexItem-growZero">
+        <div
+          class="euiHeader euiHeader-static-default"
+          style="padding: 40px 30px"
+        >
+          <div class="euiFlexGroup euiFlexGroup-l-center-stretch-column">
+            <div class="euiFlexItem euiFlexItem-growZero">
+              <div class="euiText euiText-m">
+                <h1>Gangplank</h1>
+              </div>
             </div>
-        </nav>
-        <div class="container">
-            <h4 class="header center darken-3">
-                Welcome {{ .Username }}.
-            </h4>
-            <h5>
-                Claims received from the upstream issuer:
-            </h5>
-            <pre><code class="language-yaml">
-{{- range $key, $value := .Claims -}}
-    {{- if eq $key "groups" -}}
-        {{- printf "%s:\n" $key -}}
-        {{- range $groupName := $value -}}
-            {{- printf "- \"%s\"\n" $groupName -}}
-        {{- end -}}
-    {{- else -}}
-        {{- if eq (printf "%T" $value) "string" -}}
-            {{- printf "%s: \"%s\"\n" $key $value -}}
-        {{- else if eq (printf "%T" $value) "bool" -}}
-            {{- if eq $value true -}}
-                {{- printf "%s: true\n" $key -}}
-            {{- else -}}
-                {{- printf "%s: false\n" $key -}}
-            {{ end }}
-        {{- else if or (eq (printf "%T" $value) "float64") (eq (printf "%T" $value) "float32") -}}
-            {{- printf "%s: %f\n" $key $value -}}
-        {{- else -}}
-            {{- printf "%s: %d\n" $key $value -}}
-        {{- end -}}
-    {{- end -}}
-{{- end -}}
-            </code></pre>
-            <h5>
-                In order to get command-line access to the {{ .ClusterName }} Kubernetes cluster, you will need to configure OpenID Connect (OIDC) authentication for your client.
-            </h5>
-            <br>
-            <p>
-                The Kubernetes command-line utility, kubectl, may be installed like so:
-            </p>
-           <pre>
-             <code class="language-bash">
-$ curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/$(uname | awk '{print tolower($0)}')/amd64/kubectl
-$ chmod +x ./kubectl
-$ sudo mv ./kubectl /usr/local/bin/kubectl
-             </code>
-           </pre>
-            <div class="row">
-                <div class="col s12 right-align"><a href="{{ .HTTPPath }}/kubeconf" class="btn-large waves-effect waves-light blue">Download Kubeconfig</a></div>
-                <div class="col s12">Once kubectl is installed, you may execute the following:</div>
+          </div>
+
+          <div class="euiHeaderSectionItem euiHeaderSectionItem">
+            <nav class="euiHeaderLinks euiHeaderLinks">
+              <div
+                class="euiHeaderLinks__list euiHeaderLinks__list-s-EuiHeaderLinks"
+              >
+                <a
+                  class="euiButtonEmpty euiHeaderLink euiButtonDisplay-euiButtonEmpty-m-empty-text"
+                  href="{{ .HTTPPath }}/logout"
+                  rel="noreferrer"
+                >
+                  <span class="euiButtonEmpty__content euiButtonDisplayContent">
+                    <span class="eui-textTruncate euiButtonEmpty__text">
+                      Logout
+                    </span>
+                  </span>
+                </a>
+              </div>
+            </nav>
+          </div>
+        </div>
+      </div>
+      <div class="euiFlexItem euiFlexItem-grow-1" style="padding: 40px">
+        <div class="euiFlexGroup euiFlexGroup-l-center-center-column">
+          <div class="euiFlexItem euiFlexItem-growZero">
+            <div class="euiText euiText-m-euiTextAlign-center">
+              <h1>Welcome {{ .Username }}.</h1>
+              <p>
+                In order to get command-line access to the
+                {{ .ClusterName }} Kubernetes cluster, you will need to
+                configure OpenID Connect (OIDC) authentication for your client.
+              </p>
             </div>
-            <pre>
-               <code class="language-bash">
-echo "{{ .ClusterCA }}" \ > "ca-{{ .ClusterName }}.pem"
-kubectl config set-cluster "{{ .ClusterName }}" --server={{ .APIServerURL }} --certificate-authority="ca-{{ .ClusterName }}.pem" --embed-certs
-kubectl config set-credentials "{{ .KubeCfgUser }}"  \
+          </div>
+          <div class="euiFlexItem euiFlexItem-growZero">
+            <a
+              href="{{ .HTTPPath }}/kubeconf"
+              rel="noreferrer"
+              class="euiButton euiButtonDisplay-m-defaultMinWidth-base-primary"
+            >
+              <span class="euiButtonDisplayContent">
+                <span class="eui-textTruncate">Download Kubeconfig</span>
+              </span>
+            </a>
+          </div>
+          <div class="euiFlexItem euiFlexItem-growZero">
+            <div class="euiText euiText-m-euiTextAlign-center">
+              <p>Or you can execute the following commands:</p>
+            </div>
+          </div>
+          <div class="euiFlexItem euiFlexItem-growZero" style="width: 100%">
+            <div class="euiCodeBlock euiCodeBlock-m">
+              <pre
+                class="euiCodeBlock__pre euiCodeBlock__pre-preWrap-padding"
+                tabindex="-1"
+              >
+                <code class="euiCodeBlock__code euiCodeBlock__code">
+                  <span class="euiCodeBlock__line">echo "{{ .ClusterCA }}" \ > "ca-{{ .ClusterName }}.pem"</span>
+                  <span class="euiCodeBlock__line">kubectl config set-cluster "{{ .ClusterName }}" --server={{ .APIServerURL }} --certificate-authority="ca-{{ .ClusterName }}.pem" --embed-certs</span>
+                  <span class="euiCodeBlock__line">kubectl config set-credentials "{{ .KubeCfgUser }}"  \
     --auth-provider=oidc  \
     --auth-provider-arg='idp-issuer-url={{ .IssuerURL }}'  \
     --auth-provider-arg='client-id={{ .ClientID }}'  \
     --auth-provider-arg='client-secret={{ .ClientSecret }}' \
     --auth-provider-arg='refresh-token={{ .RefreshToken }}' \
-    --auth-provider-arg='id-token={{ .IDToken }}'
-kubectl config set-context "{{ .ClusterName }}" --cluster="{{ .ClusterName }}" --user="{{ .KubeCfgUser }}"
-kubectl config use-context "{{ .ClusterName }}"
-rm "ca-{{ .ClusterName }}.pem"
-              </code>
-            </pre>
+    --auth-provider-arg='id-token={{ .IDToken }}'</span>
+                  <span class="euiCodeBlock__line">kubectl config set-context "{{ .ClusterName }}" --cluster="{{ .ClusterName }}" --user="{{ .KubeCfgUser }}"</span>
+                  <span class="euiCodeBlock__line">kubectl config use-context "{{ .ClusterName }}"</span>
+                  <span class="euiCodeBlock__line">rm "ca-{{ .ClusterName }}.pem"</span>
+                </code>
+              </pre>
+            </div>
+          </div>
         </div>
-    </body>
+      </div>
+    </div>
+  </body>
 </html>
