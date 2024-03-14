@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+nameOverride: ""
+fullnameOverride: ""
+
 image:
   repository: registry.sighup.io/fury/gangplank
   pullPolicy: IfNotPresent
@@ -19,8 +22,6 @@ image:
 
 replicas: 1
 imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
 podAnnotations: {}
 podSecurityContext: {}
 securityContext: {}
