@@ -160,6 +160,10 @@ html {
   flex-basis: auto;
 }
 
+.full-width {
+  width: 100%;
+}
+
 .euiHeader-static-default {
   display: flex;
   justify-content: space-between;
