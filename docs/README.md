@@ -186,5 +186,5 @@ Once Gangplank is deployed and functional and the Identity Provider is functiona
 A recent release of Gangplank is available at
 
 ```
-gcr.io/heptio-images/gangplank:<tag>
+registry.sighup.io/fury/gangplank:<tag>
 ```

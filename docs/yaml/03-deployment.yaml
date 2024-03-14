@@ -33,7 +33,7 @@ spec:
     spec:
       containers:
         - name: gangplank
-          image: gcr.io/heptio-images/gangplank:v3.2.0
+          image: registry.sighup.io/fury/gangplank:0.2.0
           imagePullPolicy: Always
           command: ["gangplank", "-config", "/gangplank/gangplank.yaml"]
           env:
