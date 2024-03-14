@@ -158,7 +158,6 @@ html {
   flex-direction: column;
   flex-grow: 0;
   flex-basis: auto;
-  width: 100%;
 }
 
 .euiHeader-static-default {

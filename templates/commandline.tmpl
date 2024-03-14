@@ -55,7 +55,7 @@
           </div>
         </div>
       </div>
-      <div class="euiFlexItem euiFlexItem-grow-1" style="padding: 0px 40px">
+      <div class="euiFlexItem euiFlexItem-grow-1" style="padding: 40px">
         <div class="euiFlexGroup euiFlexGroup-l-center-center-column">
           <div class="euiFlexItem euiFlexItem-growZero">
             <div class="euiText euiText-m-euiTextAlign-center">
@@ -83,7 +83,7 @@
               <p>Or you can execute the following commands:</p>
             </div>
           </div>
-          <div class="euiFlexItem euiFlexItem-growZero">
+          <div class="euiFlexItem euiFlexItem-growZero" style="width: 100%">
             <div class="euiCodeBlock euiCodeBlock-m">
               <pre
                 class="euiCodeBlock__pre euiCodeBlock__pre-preWrap-padding"
@@ -92,13 +92,13 @@
                 <code class="euiCodeBlock__code euiCodeBlock__code">
                   <span class="euiCodeBlock__line">echo "{{ .ClusterCA }}" \ > "ca-{{ .ClusterName }}.pem"</span>
                   <span class="euiCodeBlock__line">kubectl config set-cluster "{{ .ClusterName }}" --server={{ .APIServerURL }} --certificate-authority="ca-{{ .ClusterName }}.pem" --embed-certs</span>
-                  <span class="euiCodeBlock__line">kubectl config set-credentials "{{ .KubeCfgUser }}"  \</span>
-                  <span class="euiCodeBlock__line">    --auth-provider=oidc  \</span>
-                  <span class="euiCodeBlock__line">    --auth-provider-arg='idp-issuer-url={{ .IssuerURL }}'  \</span>
-                  <span class="euiCodeBlock__line">    --auth-provider-arg='client-id={{ .ClientID }}'  \</span>
-                  <span class="euiCodeBlock__line">    --auth-provider-arg='client-secret={{ .ClientSecret }}' \</span>
-                  <span class="euiCodeBlock__line">    --auth-provider-arg='refresh-token={{ .RefreshToken }}' \</span>
-                  <span class="euiCodeBlock__line">    --auth-provider-arg='id-token={{ .IDToken }}'</span>
+                  <span class="euiCodeBlock__line">kubectl config set-credentials "{{ .KubeCfgUser }}"  \
+    --auth-provider=oidc  \
+    --auth-provider-arg='idp-issuer-url={{ .IssuerURL }}'  \
+    --auth-provider-arg='client-id={{ .ClientID }}'  \
+    --auth-provider-arg='client-secret={{ .ClientSecret }}' \
+    --auth-provider-arg='refresh-token={{ .RefreshToken }}' \
+    --auth-provider-arg='id-token={{ .IDToken }}'</span>
                   <span class="euiCodeBlock__line">kubectl config set-context "{{ .ClusterName }}" --cluster="{{ .ClusterName }}" --user="{{ .KubeCfgUser }}"</span>
                   <span class="euiCodeBlock__line">kubectl config use-context "{{ .ClusterName }}"</span>
                   <span class="euiCodeBlock__line">rm "ca-{{ .ClusterName }}.pem"</span>
