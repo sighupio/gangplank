@@ -14,6 +14,8 @@ The Helm chart can be found [here](deployments/helm/README.md).
 
 Instructions for deploying with Kubernetes manifests can be found [here](docs/README.md).
 
+Container images are published to our registry at `registry.sighup.io/fury/gangplank`.
+
 ## How It Works
 
 Kubernetes supports OpenID Connect (OIDC) as a user authentication mechanism. OIDC is an
