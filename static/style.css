@@ -160,6 +160,14 @@ html {
   flex-basis: auto;
 }
 
+.full-width {
+  width: 100%;
+}
+
+.align-items-center {
+  align-items: center;
+}
+
 .euiHeader-static-default {
   display: flex;
   justify-content: space-between;
@@ -172,6 +180,7 @@ html {
   position: relative;
   background-color: #1d1e24;
   border-block-end: 1px solid #131417;
+  width: 100%;
 }
 
 .euiFlexGroup-l-center-center-column {
@@ -364,9 +373,11 @@ a {
 }
 
 .euiHeaderSectionItem {
-  position: relative;
+  position: absolute;
   display: flex;
   align-items: center;
+  right: 32px;
+  top: 20px;
 }
 
 .euiHeaderLinks {
