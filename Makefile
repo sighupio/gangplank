@@ -98,3 +98,15 @@ build:
 .PHONY: release
 release:
 	@scripts/release.sh
+
+# -------------------------------------------------------------------------------------------------
+# Development Targets
+# -------------------------------------------------------------------------------------------------
+
+.PHONY: dev-up
+dev-up:
+	@scripts/dev-up.sh
+
+.PHONY: dev-down
+dev-down:
+	@scripts/dev-down.sh
