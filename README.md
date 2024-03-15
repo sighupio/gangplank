@@ -8,7 +8,11 @@ Gangplank is a web application that allows users to authenticate with an OIDC pr
 
 ## Deployment
 
-Instructions for deploying gangplank for common cloud providers can be found [here](docs/README.md).
+Gangplank can be deployed with Helm or with Kubernetes manifests.
+
+The Helm chart can be found [here](deployments/helm/README.md).
+
+Instructions for deploying with Kubernetes manifests can be found [here](docs/README.md).
 
 ## How It Works
 
@@ -38,35 +42,14 @@ The following sequence diagram details the authentication flow:
     <img src="docs/images/gangplank-sequence-diagram.png" width="600px" />
 </p>
 
-## API-Server flags
+## Kubernetes API Server
 
-Gangplank requires that the Kubernetes API server is configured for OIDC:
-
-https://kubernetes.io/docs/admin/authentication/#configuring-the-api-server
-
-```bash
-kube-apiserver
-...
---oidc-issuer-url="https://example.auth0.com/"
---oidc-client-id=3YM4ue8MoXgBkvCIHh00000000000
---oidc-username-claim=email
---oidc-groups-claim=groups
-```
+Gangplank requires that the Kubernetes API server is configured to use OIDC for authentication, check the following link for more information: https://kubernetes.io/docs/reference/access-authn-authz/authentication/#configuring-the-api-server
 
 ## Build
 
-Requirements for building
-
-- Go (built with version >= 1.22)
-- [esc](https://github.com/mjibson/esc) for static resources.
-
-A Makefile is provided for building tasks. The options are as follows
-
-Getting started is as simple as:
+The project uses [asdf](https://github.com/asdf-vm/asdf) to manage the build tools. After installing the required tools, the following command will build the Gangplank binary and the container image:
 
 ```bash
-go get -u github.com/sighup/gangplank
-cd $GOPATH/src/github.com/sighup/gangplank
-make setup
-make
+make build
 ```
