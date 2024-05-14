@@ -60,7 +60,7 @@ dockers:
       - registry.sighup.io/fury/gangplank-amd64:{{ .Major }}
       - registry.sighup.io/fury/gangplank-amd64:{{ .Major }}.{{ .Minor }}
       - registry.sighup.io/fury/gangplank-amd64:{{ .Major }}.{{ .Minor }}.{{ .Patch }}
-    skip_push: auto
+    skip_push: false
 
   - build_flag_templates:
       - --platform=linux/arm64
@@ -70,7 +70,7 @@ dockers:
       - registry.sighup.io/fury/gangplank-arm64:{{ .Major }}
       - registry.sighup.io/fury/gangplank-arm64:{{ .Major }}.{{ .Minor }}
       - registry.sighup.io/fury/gangplank-arm64:{{ .Major }}.{{ .Minor }}.{{ .Patch }}
-    skip_push: auto
+    skip_push: false
 
 docker_manifests:
   - name_template: registry.sighup.io/fury/gangplank:latest
