@@ -138,3 +138,7 @@ config:
   # The path to find custom HTML templates
   # Env var: GANGPLANK_CONFIG_CUSTOM_HTTP_TEMPLATES_DIR
   # customHTMLTemplatesDir: /custom-templates
+
+  # Flag to remove the CA from the kubeconfig.
+  # Env var: GANGPLANK_CONFIG_REMOVE_CA_FROM_KUBECONFIG
+  # removeCAFromKubeconfig: false

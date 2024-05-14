@@ -301,6 +301,10 @@ func generateInfo(w http.ResponseWriter, r *http.Request) *userInfo {
 		slog.Warn("Could not read CA file", "error", err)
 	}
 
+	if cfg.RemoveCAFromKubeconfig {
+		caBytes = []byte{}
+	}
+
 	// load the session cookies
 	sessionIDToken, err := gangplankUserSession.Session.Get(r, "gangplank_id_token")
 	if err != nil {
