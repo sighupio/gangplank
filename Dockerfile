@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM alpine:3.19 as ca-certificates
+FROM alpine:3.19.1 as ca-certificates
 
 RUN apk update
 RUN apk add --no-cache ca-certificates
