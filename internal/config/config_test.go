@@ -38,6 +38,7 @@ func TestEnvionmentOverrides(t *testing.T) {
 	os.Setenv("GANGPLANK_CONFIG_AUDIENCE", "foo")
 	os.Setenv("GANGPLANK_CONFIG_SCOPES", "groups,sub")
 	os.Setenv("GANGPLANK_CONFIG_REMOVE_CA_FROM_KUBECONFIG", "true")
+	os.Setenv("GANGPLANK_CONFIG_NAMESPACE", "default")
 	cfg, err := NewConfig("")
 	if err != nil {
 		t.Errorf("Failed to test config overrides with error: %s", err)
@@ -57,6 +58,10 @@ func TestEnvionmentOverrides(t *testing.T) {
 
 	if cfg.RemoveCAFromKubeconfig != true {
 		t.Errorf("Failed to set RemoveCAFromKubeconfig via environment variable. Expected %t but got %t", true, cfg.RemoveCAFromKubeconfig)
+	}
+
+	if cfg.Namespace != "default" {
+		t.Errorf("Failed to set namespace via environment variable. Expected %s but got %s", "default", cfg.Namespace)
 	}
 }
 

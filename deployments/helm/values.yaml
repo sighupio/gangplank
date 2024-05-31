@@ -142,3 +142,7 @@ config:
   # Flag to remove the CA from the kubeconfig.
   # Env var: GANGPLANK_CONFIG_REMOVE_CA_FROM_KUBECONFIG
   # removeCAFromKubeconfig: false
+
+  # Namespace to use in the kubeconfig.
+  # Env var: GANGPLANK_CONFIG_NAMESPACE
+  # namespace: "default"

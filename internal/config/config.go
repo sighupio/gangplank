@@ -49,7 +49,8 @@ type Config struct {
 	SessionSecurityKey     string `yaml:"sessionSecurityKey" envconfig:"SESSION_SECURITY_KEY"`
 	CustomHTMLTemplatesDir string `yaml:"customHTMLTemplatesDir" envconfig:"custom_http_templates_dir"`
 
-	RemoveCAFromKubeconfig bool `yaml:"removeCAFromKubeconfig" envconfig:"remove_ca_from_kubeconfig"`
+	RemoveCAFromKubeconfig bool   `yaml:"removeCAFromKubeconfig" envconfig:"remove_ca_from_kubeconfig"`
+	Namespace              string `yaml:"namespace" envconfig:"namespace"`
 }
 
 // NewConfig returns a Config struct from serialized config file
