@@ -60,6 +60,12 @@ dockers:
       - registry.sighup.io/fury/gangplank-amd64:{{ .Major }}
       - registry.sighup.io/fury/gangplank-amd64:{{ .Major }}.{{ .Minor }}
       - registry.sighup.io/fury/gangplank-amd64:{{ .Major }}.{{ .Minor }}.{{ .Patch }}
+    skip_push: auto
+
+  - build_flag_templates:
+      - --platform=linux/amd64
+    image_templates:
+      - registry.sighup.io/fury/gangplank-amd64:{{ .Tag }}
     skip_push: false
 
   - build_flag_templates:
@@ -70,6 +76,13 @@ dockers:
       - registry.sighup.io/fury/gangplank-arm64:{{ .Major }}
       - registry.sighup.io/fury/gangplank-arm64:{{ .Major }}.{{ .Minor }}
       - registry.sighup.io/fury/gangplank-arm64:{{ .Major }}.{{ .Minor }}.{{ .Patch }}
+    skip_push: auto
+
+  - build_flag_templates:
+      - --platform=linux/arm64
+    goarch: arm64
+    image_templates:
+      - registry.sighup.io/fury/gangplank-arm64:{{ .Tag }}
     skip_push: false
 
 docker_manifests:
@@ -92,6 +105,11 @@ docker_manifests:
     image_templates:
       - registry.sighup.io/fury/gangplank-amd64:{{ .Major }}.{{ .Minor }}.{{ .Patch }}
       - registry.sighup.io/fury/gangplank-arm64:{{ .Major }}.{{ .Minor }}.{{ .Patch }}
+
+  - name_template: registry.sighup.io/fury/gangplank:{{ .Tag }}
+    image_templates:
+      - registry.sighup.io/fury/gangplank-amd64:{{ .Tag }}
+      - registry.sighup.io/fury/gangplank-arm64:{{ .Tag }}
 
 docker_signs:
   - artifacts: all
