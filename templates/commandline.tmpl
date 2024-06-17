@@ -90,8 +90,10 @@
                 tabindex="-1"
               >
                 <code class="euiCodeBlock__code euiCodeBlock__code">
+                  {{ if not (eq .ClusterCA  "") }}
                   <span class="euiCodeBlock__line">echo "{{ .ClusterCA }}" \ > "ca-{{ .ClusterName }}.pem"</span>
-                  <span class="euiCodeBlock__line">kubectl config set-cluster "{{ .ClusterName }}" --server={{ .APIServerURL }} --certificate-authority="ca-{{ .ClusterName }}.pem" --embed-certs</span>
+                  {{ end }}
+                  <span class="euiCodeBlock__line">kubectl config set-cluster "{{ .ClusterName }}" --server={{ .APIServerURL }}{{ if not (eq .ClusterCA  "") }} --certificate-authority="ca-{{ .ClusterName }}.pem" --embed-certs{{ end }}</span>
                   <span class="euiCodeBlock__line">kubectl config set-credentials "{{ .KubeCfgUser }}"  \
     --auth-provider=oidc  \
     --auth-provider-arg='idp-issuer-url={{ .IssuerURL }}'  \
@@ -99,9 +101,9 @@
     --auth-provider-arg='client-secret={{ .ClientSecret }}' \
     --auth-provider-arg='refresh-token={{ .RefreshToken }}' \
     --auth-provider-arg='id-token={{ .IDToken }}'</span>
-                  <span class="euiCodeBlock__line">kubectl config set-context "{{ .ClusterName }}" --cluster="{{ .ClusterName }}" --user="{{ .KubeCfgUser }}"</span>
+                  <span class="euiCodeBlock__line">kubectl config set-context "{{ .ClusterName }}" --cluster="{{ .ClusterName }}" --user="{{ .KubeCfgUser }}" {{ if not (eq .Namespace "") }}--namespace="{{ .Namespace }}"{{ end }}</span>
                   <span class="euiCodeBlock__line">kubectl config use-context "{{ .ClusterName }}"</span>
-                  <span class="euiCodeBlock__line">rm "ca-{{ .ClusterName }}.pem"</span>
+                  {{ if not (eq .ClusterCA  "") }}<span class="euiCodeBlock__line">rm "ca-{{ .ClusterName }}.pem"</span>{{ end }}
                 </code>
               </pre>
             </div>

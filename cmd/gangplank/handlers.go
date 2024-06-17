@@ -53,6 +53,7 @@ type userInfo struct {
 	APIServerURL string
 	ClusterCA    string
 	HTTPPath     string
+	Namespace    string
 }
 
 // homeInfo is used to store dynamic properties on
@@ -111,8 +112,9 @@ func generateKubeConfig(cfg *userInfo) clientcmdapi.Config {
 			{
 				Name: cfg.ClusterName,
 				Context: clientcmdapi.Context{
-					Cluster:  cfg.ClusterName,
-					AuthInfo: cfg.KubeCfgUser,
+					Cluster:   cfg.ClusterName,
+					AuthInfo:  cfg.KubeCfgUser,
+					Namespace: cfg.Namespace,
 				},
 			},
 		},
@@ -301,6 +303,10 @@ func generateInfo(w http.ResponseWriter, r *http.Request) *userInfo {
 		slog.Warn("Could not read CA file", "error", err)
 	}
 
+	if cfg.RemoveCAFromKubeconfig {
+		caBytes = []byte{}
+	}
+
 	// load the session cookies
 	sessionIDToken, err := gangplankUserSession.Session.Get(r, "gangplank_id_token")
 	if err != nil {
@@ -375,6 +381,7 @@ func generateInfo(w http.ResponseWriter, r *http.Request) *userInfo {
 		APIServerURL: cfg.APIServerURL,
 		ClusterCA:    string(caBytes),
 		HTTPPath:     cfg.HTTPPath,
+		Namespace:    cfg.Namespace,
 	}
 	return info
 }
