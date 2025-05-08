@@ -27,12 +27,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ghodss/yaml"
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/sighupio/gangplank/internal/oidc"
-	"github.com/sighupio/gangplank/templates"
 	"golang.org/x/oauth2"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api/v1"
+
+	"github.com/ghodss/yaml"
+	"github.com/golang-jwt/jwt/v5"
+
+	"github.com/sighupio/gangplank/internal/oidc"
+	"github.com/sighupio/gangplank/templates"
 )
 
 const (
@@ -52,6 +54,7 @@ type userInfo struct {
 	IssuerURL    string
 	APIServerURL string
 	ClusterCA    string
+	IDPCA        string
 	HTTPPath     string
 	Namespace    string
 }
@@ -125,11 +128,12 @@ func generateKubeConfig(cfg *userInfo) clientcmdapi.Config {
 					AuthProvider: &clientcmdapi.AuthProviderConfig{
 						Name: "oidc",
 						Config: map[string]string{
-							"client-id":      cfg.ClientID,
-							"client-secret":  cfg.ClientSecret,
-							"id-token":       cfg.IDToken,
-							"idp-issuer-url": cfg.IssuerURL,
-							"refresh-token":  cfg.RefreshToken,
+							"client-id":                      cfg.ClientID,
+							"client-secret":                  cfg.ClientSecret,
+							"id-token":                       cfg.IDToken,
+							"idp-issuer-url":                 cfg.IssuerURL,
+							"refresh-token":                  cfg.RefreshToken,
+							"idp-certificate-authority-data": cfg.IDPCA,
 						},
 					},
 				},
@@ -300,11 +304,24 @@ func generateInfo(w http.ResponseWriter, r *http.Request) *userInfo {
 	defer file.Close()
 	caBytes, err := io.ReadAll(file)
 	if err != nil {
-		slog.Warn("Could not read CA file", "error", err)
+		slog.Warn("Could not read IDP file", "error", err)
+	} // read in public ca.crt to output in commandline copy/paste commands
+
+	file, err = os.Open(cfg.IDPCAPath)
+	if err != nil {
+		// let us know that we couldn't open the file. This only cause missing output
+		// does not impact actual function of program
+		slog.Error("Failed to open IDP file", "error", err)
+	}
+	defer file.Close()
+	idpBytes, err := io.ReadAll(file)
+	if err != nil {
+		slog.Warn("Could not read IDP file", "error", err)
 	}
 
 	if cfg.RemoveCAFromKubeconfig {
 		caBytes = []byte{}
+		idpBytes = []byte{}
 	}
 
 	// load the session cookies
@@ -380,6 +397,7 @@ func generateInfo(w http.ResponseWriter, r *http.Request) *userInfo {
 		IssuerURL:    issuerURL,
 		APIServerURL: cfg.APIServerURL,
 		ClusterCA:    string(caBytes),
+		IDPCA:        string(idpBytes),
 		HTTPPath:     cfg.HTTPPath,
 		Namespace:    cfg.Namespace,
 	}

@@ -26,13 +26,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ghodss/yaml"
-
-	"github.com/gorilla/sessions"
-	"github.com/sighupio/gangplank/internal/config"
-	"github.com/sighupio/gangplank/internal/session"
 	"golang.org/x/oauth2"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api/v1"
+
+	"github.com/ghodss/yaml"
+	"github.com/gorilla/sessions"
+
+	"github.com/sighupio/gangplank/internal/config"
+	"github.com/sighupio/gangplank/internal/session"
 )
 
 func testInit() {
@@ -284,11 +285,12 @@ func TestKubeconfigHandler(t *testing.T) {
 			usernameClaim:        "sub",
 			expectedAuthInfoName: "gangway@heptio.com@cluster1",
 			expectedAuthInfoAuthProviderConfig: map[string]string{
-				"client-id":      "someClientID",
-				"client-secret":  "someClientSecret",
-				"id-token":       "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJHYW5nd2F5VGVzdCIsImlhdCI6MTU0MDA0NjM0NywiZXhwIjoxODg3MjAxNTQ3LCJhdWQiOiJnYW5nd2F5LmhlcHRpby5jb20iLCJzdWIiOiJnYW5nd2F5QGhlcHRpby5jb20iLCJHaXZlbk5hbWUiOiJHYW5nIiwiU3VybmFtZSI6IldheSIsIkVtYWlsIjoiZ2FuZ3dheUBoZXB0aW8uY29tIiwiR3JvdXBzIjoiZGV2LGFkbWluIn0.zNG4Dnxr76J0p4phfsAUYWunioct0krkMiunMynlQsU",
-				"refresh-token":  "bar",
-				"idp-issuer-url": "GangwayTest",
+				"client-id":                      "someClientID",
+				"client-secret":                  "someClientSecret",
+				"id-token":                       "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJHYW5nd2F5VGVzdCIsImlhdCI6MTU0MDA0NjM0NywiZXhwIjoxODg3MjAxNTQ3LCJhdWQiOiJnYW5nd2F5LmhlcHRpby5jb20iLCJzdWIiOiJnYW5nd2F5QGhlcHRpby5jb20iLCJHaXZlbk5hbWUiOiJHYW5nIiwiU3VybmFtZSI6IldheSIsIkVtYWlsIjoiZ2FuZ3dheUBoZXB0aW8uY29tIiwiR3JvdXBzIjoiZGV2LGFkbWluIn0.zNG4Dnxr76J0p4phfsAUYWunioct0krkMiunMynlQsU",
+				"refresh-token":                  "bar",
+				"idp-issuer-url":                 "GangwayTest",
+				"idp-certificate-authority-data": "dummy cluster IDP CA",
 			},
 		},
 	}
@@ -310,9 +312,18 @@ func TestKubeconfigHandler(t *testing.T) {
 			}
 			fmt.Fprint(f, clusterCAData)
 
+			// Create dummy cluster IDP CA file
+			idpCAData := "dummy cluster IDP CA"
+			fIdp, err := os.CreateTemp("", "gangplank-kubeconfig-handler-test-idp")
+			if err != nil {
+				t.Fatalf("Error creating temp file: %v", err)
+			}
+			fmt.Fprint(fIdp, idpCAData)
+
 			// Set config global var
 			cfg = &tc.cfg
 			cfg.ClusterCAPath = f.Name()
+			cfg.IDPCAPath = fIdp.Name()
 
 			// Init variables
 			rsp = NewRecorder()

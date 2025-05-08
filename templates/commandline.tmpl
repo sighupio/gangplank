@@ -100,7 +100,9 @@
     --auth-provider-arg='client-id={{ .ClientID }}'  \
     --auth-provider-arg='client-secret={{ .ClientSecret }}' \
     --auth-provider-arg='refresh-token={{ .RefreshToken }}' \
-    --auth-provider-arg='id-token={{ .IDToken }}'</span>
+    --auth-provider-arg='id-token={{ .IDToken }}' 
+    {{ if not (eq .IDPCA  "") }} \ --auth-provider-arg='idp-certificate-authority=={{ .IDPCA }}' {{ end }}
+                  </span> 
                   <span class="euiCodeBlock__line">kubectl config set-context "{{ .ClusterName }}" --cluster="{{ .ClusterName }}" --user="{{ .KubeCfgUser }}" {{ if not (eq .Namespace "") }}--namespace="{{ .Namespace }}"{{ end }}</span>
                   <span class="euiCodeBlock__line">kubectl config use-context "{{ .ClusterName }}"</span>
                   {{ if not (eq .ClusterCA  "") }}<span class="euiCodeBlock__line">rm "ca-{{ .ClusterName }}.pem"</span>{{ end }}

@@ -18,8 +18,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/kelseyhightower/envconfig"
 	"gopkg.in/yaml.v2"
+
+	"github.com/kelseyhightower/envconfig"
 )
 
 // Config the configuration field for gangplank
@@ -43,6 +44,7 @@ type Config struct {
 	KeyFile                string   `yaml:"keyFile" envconfig:"key_file"`
 	APIServerURL           string   `yaml:"apiServerURL" envconfig:"apiserver_url"`
 	ClusterCAPath          string   `yaml:"clusterCAPath" envconfig:"cluster_ca_path"`
+	IDPCAPath              string   `yaml:"idpCAPath" envconfig:"idp_ca_path"`
 	TrustedCAPath          string   `yaml:"trustedCAPath" envconfig:"trusted_ca_path"`
 	HTTPPath               string   `yaml:"httpPath" envconfig:"http_path"`
 
@@ -67,6 +69,7 @@ func NewConfig(configFile string) (*Config, error) {
 		CertFile:               "/etc/gangplank/tls/tls.crt",
 		KeyFile:                "/etc/gangplank/tls/tls.key",
 		ClusterCAPath:          "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+		IDPCAPath:              "",
 		HTTPPath:               "",
 		RemoveCAFromKubeconfig: false,
 	}
@@ -95,6 +98,10 @@ func NewConfig(configFile string) (*Config, error) {
 
 	// Check for trailing slash on HTTPPath and remove
 	cfg.HTTPPath = strings.TrimRight(cfg.HTTPPath, "/")
+
+	if cfg.IDPCAPath == "" {
+		cfg.IDPCAPath = cfg.ClusterCAPath
+	}
 
 	return cfg, nil
 }
