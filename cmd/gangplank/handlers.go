@@ -305,18 +305,22 @@ func generateInfo(w http.ResponseWriter, r *http.Request) *userInfo {
 	caBytes, err := io.ReadAll(file)
 	if err != nil {
 		slog.Warn("Could not read IDP file", "error", err)
-	} // read in public ca.crt to output in commandline copy/paste commands
-
-	file, err = os.Open(cfg.IDPCAPath)
-	if err != nil {
-		// let us know that we couldn't open the file. This only cause missing output
-		// does not impact actual function of program
-		slog.Error("Failed to open IDP file", "error", err)
 	}
-	defer file.Close()
-	idpBytes, err := io.ReadAll(file)
-	if err != nil {
-		slog.Warn("Could not read IDP file", "error", err)
+
+	idpBytes := []byte{}
+	if cfg.IDPCAPath != "" {
+		// read in public ca.crt to output in commandline copy/paste commands
+		file, err = os.Open(cfg.IDPCAPath)
+		if err != nil {
+			// let us know that we couldn't open the file. This only cause missing output
+			// does not impact actual function of program
+			slog.Error("Failed to open IDP file", "error", err)
+		}
+		defer file.Close()
+		idpBytes, err = io.ReadAll(file)
+		if err != nil {
+			slog.Warn("Could not read IDP file", "error", err)
+		}
 	}
 
 	if cfg.RemoveCAFromKubeconfig {

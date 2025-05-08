@@ -99,10 +99,6 @@ func NewConfig(configFile string) (*Config, error) {
 	// Check for trailing slash on HTTPPath and remove
 	cfg.HTTPPath = strings.TrimRight(cfg.HTTPPath, "/")
 
-	if cfg.IDPCAPath == "" {
-		cfg.IDPCAPath = cfg.ClusterCAPath
-	}
-
 	return cfg, nil
 }
 
