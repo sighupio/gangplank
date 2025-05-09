@@ -97,6 +97,8 @@ func serveTemplate(tmplFile string, data interface{}, w http.ResponseWriter) {
 }
 
 func generateKubeConfig(cfg *userInfo) clientcmdapi.Config {
+	idpCAb64 := make([]byte, base64.StdEncoding.EncodedLen(len(cfg.IDPCA)))
+	base64.StdEncoding.Encode(idpCAb64, []byte(cfg.IDPCA))
 	// fill out kubeconfig structure
 	kcfg := clientcmdapi.Config{
 		Kind:           "Config",
@@ -133,7 +135,7 @@ func generateKubeConfig(cfg *userInfo) clientcmdapi.Config {
 							"id-token":                       cfg.IDToken,
 							"idp-issuer-url":                 cfg.IssuerURL,
 							"refresh-token":                  cfg.RefreshToken,
-							"idp-certificate-authority-data": cfg.IDPCA,
+							"idp-certificate-authority-data": string(idpCAb64),
 						},
 					},
 				},
@@ -169,7 +171,6 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
-
 	b := make([]byte, 32)
 	rand.Read(b)
 	state := url.QueryEscape(base64.StdEncoding.EncodeToString(b))

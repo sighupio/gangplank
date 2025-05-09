@@ -1,117 +1,102 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>Gangplank</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:slnt,wght@-10,300..700;0,300..700&family=Roboto+Mono:ital,wght@0,400..700;1,400..700&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      type="text/css"
-      media="screen"
-      href="{{ .HTTPPath }}/static/style.css"
-    />
-  </head>
-  <body style="height: 100%">
-    <div
-      class="euiFlexGroup euiFlexGroup-l-flexStart-stretch-column"
-      style="height: 100%"
-    >
-      <div class="euiFlexItem euiFlexItem-growZero">
-        <div
-          class="euiHeader euiHeader-static-default"
-          style="padding: 40px 30px"
-        >
-          <div class="euiFlexGroup euiFlexGroup-l-center-stretch-column">
-            <div class="euiFlexItem euiFlexItem-growZero align-items-center">
-              <div class="euiText euiText-m">
-                <h1>Gangplank</h1>
-              </div>
-            </div>
-          </div>
 
-          <div class="euiHeaderSectionItem euiHeaderSectionItem">
-            <nav class="euiHeaderLinks euiHeaderLinks">
-              <div
-                class="euiHeaderLinks__list euiHeaderLinks__list-s-EuiHeaderLinks"
-              >
-                <a
-                  class="euiButtonEmpty euiHeaderLink euiButtonDisplay-euiButtonEmpty-m-empty-text"
-                  href="{{ .HTTPPath }}/logout"
-                  rel="noreferrer"
-                >
-                  <span class="euiButtonEmpty__content euiButtonDisplayContent">
-                    <span class="eui-textTruncate euiButtonEmpty__text">
-                      Logout
-                    </span>
-                  </span>
-                </a>
-              </div>
-            </nav>
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Gangplank</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:slnt,wght@-10,300..700;0,300..700&family=Roboto+Mono:ital,wght@0,400..700;1,400..700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" type="text/css" media="screen" href="{{ .HTTPPath }}/static/style.css" />
+</head>
+
+<body style="height: 100%">
+  <div class="euiFlexGroup euiFlexGroup-l-flexStart-stretch-column" style="height: 100%">
+    <div class="euiFlexItem euiFlexItem-growZero">
+      <div class="euiHeader euiHeader-static-default" style="padding: 40px 30px">
+        <div class="euiFlexGroup euiFlexGroup-l-center-stretch-column">
+          <div class="euiFlexItem euiFlexItem-growZero align-items-center">
+            <div class="euiText euiText-m">
+              <h1>Gangplank</h1>
+            </div>
           </div>
         </div>
+
+        <div class="euiHeaderSectionItem euiHeaderSectionItem">
+          <nav class="euiHeaderLinks euiHeaderLinks">
+            <div class="euiHeaderLinks__list euiHeaderLinks__list-s-EuiHeaderLinks">
+              <a class="euiButtonEmpty euiHeaderLink euiButtonDisplay-euiButtonEmpty-m-empty-text"
+                href="{{ .HTTPPath }}/logout" rel="noreferrer">
+                <span class="euiButtonEmpty__content euiButtonDisplayContent">
+                  <span class="eui-textTruncate euiButtonEmpty__text">
+                    Logout
+                  </span>
+                </span>
+              </a>
+            </div>
+          </nav>
+        </div>
       </div>
-      <div class="euiFlexItem euiFlexItem-grow-1" style="padding: 40px">
-        <div class="euiFlexGroup euiFlexGroup-l-center-center-column">
-          <div class="euiFlexItem euiFlexItem-growZero">
-            <div class="euiText euiText-m-euiTextAlign-center">
-              <h1>Welcome {{ .Username }}.</h1>
-              <p>
-                In order to get command-line access to the
-                {{ .ClusterName }} Kubernetes cluster, you will need to
-                configure OpenID Connect (OIDC) authentication for your client.
-              </p>
-            </div>
+    </div>
+    <div class="euiFlexItem euiFlexItem-grow-1" style="padding: 40px">
+      <div class="euiFlexGroup euiFlexGroup-l-center-center-column">
+        <div class="euiFlexItem euiFlexItem-growZero">
+          <div class="euiText euiText-m-euiTextAlign-center">
+            <h1>Welcome {{ .Username }}.</h1>
+            <p>
+              In order to get command-line access to the
+              {{ .ClusterName }} Kubernetes cluster, you will need to
+              configure OpenID Connect (OIDC) authentication for your client.
+            </p>
           </div>
-          <div class="euiFlexItem euiFlexItem-growZero">
-            <a
-              href="{{ .HTTPPath }}/kubeconf"
-              rel="noreferrer"
-              class="euiButton euiButtonDisplay-m-defaultMinWidth-base-primary"
-            >
-              <span class="euiButtonDisplayContent">
-                <span class="eui-textTruncate">Download Kubeconfig</span>
-              </span>
-            </a>
+        </div>
+        <div class="euiFlexItem euiFlexItem-growZero">
+          <a href="{{ .HTTPPath }}/kubeconf" rel="noreferrer"
+            class="euiButton euiButtonDisplay-m-defaultMinWidth-base-primary">
+            <span class="euiButtonDisplayContent">
+              <span class="eui-textTruncate">Download Kubeconfig</span>
+            </span>
+          </a>
+        </div>
+        <div class="euiFlexItem euiFlexItem-growZero">
+          <div class="euiText euiText-m-euiTextAlign-center">
+            <p>Or you can execute the following commands:</p>
           </div>
-          <div class="euiFlexItem euiFlexItem-growZero">
-            <div class="euiText euiText-m-euiTextAlign-center">
-              <p>Or you can execute the following commands:</p>
-            </div>
-          </div>
-          <div class="euiFlexItem euiFlexItem-growZero full-width">
-            <div class="euiCodeBlock euiCodeBlock-m">
-              <pre
-                class="euiCodeBlock__pre euiCodeBlock__pre-preWrap-padding"
-                tabindex="-1"
-              >
+        </div>
+        <div class="euiFlexItem euiFlexItem-growZero full-width">
+          <div class="euiCodeBlock euiCodeBlock-m">
+            <pre class="euiCodeBlock__pre euiCodeBlock__pre-preWrap-padding" tabindex="-1">
                 <code class="euiCodeBlock__code euiCodeBlock__code">
                   {{ if not (eq .ClusterCA  "") }}
                   <span class="euiCodeBlock__line">echo "{{ .ClusterCA }}" \ > "ca-{{ .ClusterName }}.pem"</span>
                   {{ end }}
+                  {{ if not (eq .IDPCA  "") }}
+                  <span class="euiCodeBlock__line">echo "{{ .IDPCA }}" \ > "ca-idp-{{ .ClusterName }}.pem"</span>
+                  {{ end }}
                   <span class="euiCodeBlock__line">kubectl config set-cluster "{{ .ClusterName }}" --server={{ .APIServerURL }}{{ if not (eq .ClusterCA  "") }} --certificate-authority="ca-{{ .ClusterName }}.pem" --embed-certs{{ end }}</span>
                   <span class="euiCodeBlock__line">kubectl config set-credentials "{{ .KubeCfgUser }}"  \
     --auth-provider=oidc  \
-    --auth-provider-arg='idp-issuer-url={{ .IssuerURL }}'  \
-    --auth-provider-arg='client-id={{ .ClientID }}'  \
-    --auth-provider-arg='client-secret={{ .ClientSecret }}' \
-    --auth-provider-arg='refresh-token={{ .RefreshToken }}' \
-    --auth-provider-arg='id-token={{ .IDToken }}' 
-    {{ if not (eq .IDPCA  "") }} \ --auth-provider-arg='idp-certificate-authority=={{ .IDPCA }}' {{ end }}
+    --auth-provider-arg="idp-issuer-url={{ .IssuerURL }}"  \
+    --auth-provider-arg="client-id={{ .ClientID }}"  \
+    --auth-provider-arg="client-secret={{ .ClientSecret }}" \
+    --auth-provider-arg="refresh-token={{ .RefreshToken }}" \
+    --auth-provider-arg="id-token={{ .IDToken }}" {{ if not (eq .IDPCA  "") }}\
+    --auth-provider-arg="idp-certificate-authority-data=$(base64 -i ca-idp-{{ .ClusterName }}.pem)"
+    {{ end }}
                   </span> 
                   <span class="euiCodeBlock__line">kubectl config set-context "{{ .ClusterName }}" --cluster="{{ .ClusterName }}" --user="{{ .KubeCfgUser }}" {{ if not (eq .Namespace "") }}--namespace="{{ .Namespace }}"{{ end }}</span>
                   <span class="euiCodeBlock__line">kubectl config use-context "{{ .ClusterName }}"</span>
                   {{ if not (eq .ClusterCA  "") }}<span class="euiCodeBlock__line">rm "ca-{{ .ClusterName }}.pem"</span>{{ end }}
+                  {{ if not (eq .IDPCA  "") }}<span class="euiCodeBlock__line">rm "ca-idp-{{ .ClusterName }}.pem"</span>{{ end }}
                 </code>
               </pre>
-            </div>
           </div>
         </div>
       </div>
     </div>
-  </body>
+  </div>
+</body>
+
 </html>
