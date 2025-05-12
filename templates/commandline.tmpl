@@ -72,9 +72,6 @@
                   {{ if not (eq .ClusterCA  "") }}
                   <span class="euiCodeBlock__line">echo "{{ .ClusterCA }}" \ > "ca-{{ .ClusterName }}.pem"</span>
                   {{ end }}
-                  {{ if not (eq .IDPCA  "") }}
-                  <span class="euiCodeBlock__line">echo "{{ .IDPCA }}" \ > "ca-idp-{{ .ClusterName }}.pem"</span>
-                  {{ end }}
                   <span class="euiCodeBlock__line">kubectl config set-cluster "{{ .ClusterName }}" --server={{ .APIServerURL }}{{ if not (eq .ClusterCA  "") }} --certificate-authority="ca-{{ .ClusterName }}.pem" --embed-certs{{ end }}</span>
                   <span class="euiCodeBlock__line">kubectl config set-credentials "{{ .KubeCfgUser }}"  \
     --auth-provider=oidc  \
@@ -82,8 +79,8 @@
     --auth-provider-arg="client-id={{ .ClientID }}"  \
     --auth-provider-arg="client-secret={{ .ClientSecret }}" \
     --auth-provider-arg="refresh-token={{ .RefreshToken }}" \
-    --auth-provider-arg="id-token={{ .IDToken }}" {{ if not (eq .IDPCA  "") }}\
-    --auth-provider-arg="idp-certificate-authority-data=$(base64 -i ca-idp-{{ .ClusterName }}.pem)"
+    --auth-provider-arg="id-token={{ .IDToken }}" {{ if not (eq .IDPCAb64  "") }}\
+    --auth-provider-arg="idp-certificate-authority-data={{ .IDPCAb64 }}" \
     {{ end }}
                   </span> 
                   <span class="euiCodeBlock__line">kubectl config set-context "{{ .ClusterName }}" --cluster="{{ .ClusterName }}" --user="{{ .KubeCfgUser }}" {{ if not (eq .Namespace "") }}--namespace="{{ .Namespace }}"{{ end }}</span>

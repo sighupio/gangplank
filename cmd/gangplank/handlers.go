@@ -54,7 +54,7 @@ type userInfo struct {
 	IssuerURL    string
 	APIServerURL string
 	ClusterCA    string
-	IDPCA        string
+	IDPCAb64     string
 	HTTPPath     string
 	Namespace    string
 }
@@ -97,8 +97,6 @@ func serveTemplate(tmplFile string, data interface{}, w http.ResponseWriter) {
 }
 
 func generateKubeConfig(cfg *userInfo) clientcmdapi.Config {
-	idpCAb64 := make([]byte, base64.StdEncoding.EncodedLen(len(cfg.IDPCA)))
-	base64.StdEncoding.Encode(idpCAb64, []byte(cfg.IDPCA))
 	// fill out kubeconfig structure
 	kcfg := clientcmdapi.Config{
 		Kind:           "Config",
@@ -135,7 +133,7 @@ func generateKubeConfig(cfg *userInfo) clientcmdapi.Config {
 							"id-token":                       cfg.IDToken,
 							"idp-issuer-url":                 cfg.IssuerURL,
 							"refresh-token":                  cfg.RefreshToken,
-							"idp-certificate-authority-data": string(idpCAb64),
+							"idp-certificate-authority-data": string(cfg.IDPCAb64),
 						},
 					},
 				},
@@ -295,38 +293,39 @@ func kubeConfigHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func generateInfo(w http.ResponseWriter, r *http.Request) *userInfo {
-	// read in public ca.crt to output in commandline copy/paste commands
-	file, err := os.Open(cfg.ClusterCAPath)
-	if err != nil {
-		// let us know that we couldn't open the file. This only cause missing output
-		// does not impact actual function of program
-		slog.Error("Failed to open CA file", "error", err)
-	}
-	defer file.Close()
-	caBytes, err := io.ReadAll(file)
-	if err != nil {
-		slog.Warn("Could not read IDP file", "error", err)
-	}
+	caBytes := []byte{}
+	idpCAb64Bytes := []byte{}
 
-	idpBytes := []byte{}
-	if cfg.IDPCAPath != "" {
+	if !cfg.RemoveCAFromKubeconfig {
 		// read in public ca.crt to output in commandline copy/paste commands
-		file, err = os.Open(cfg.IDPCAPath)
+		file, err := os.Open(cfg.ClusterCAPath)
 		if err != nil {
 			// let us know that we couldn't open the file. This only cause missing output
 			// does not impact actual function of program
-			slog.Error("Failed to open IDP file", "error", err)
+			slog.Error("Failed to open CA file", "error", err)
 		}
 		defer file.Close()
-		idpBytes, err = io.ReadAll(file)
+		caBytes, err = io.ReadAll(file)
 		if err != nil {
 			slog.Warn("Could not read IDP file", "error", err)
 		}
-	}
 
-	if cfg.RemoveCAFromKubeconfig {
-		caBytes = []byte{}
-		idpBytes = []byte{}
+		if cfg.IDPCAPath != "" {
+			// read in public ca.crt to output in commandline copy/paste commands
+			file, err = os.Open(cfg.IDPCAPath)
+			if err != nil {
+				// let us know that we couldn't open the file. This only cause missing output
+				// does not impact actual function of program
+				slog.Error("Failed to open IDP file", "error", err)
+			}
+			defer file.Close()
+			idpBytes, err := io.ReadAll(file)
+			if err != nil {
+				slog.Warn("Could not read IDP file", "error", err)
+			}
+			idpCAb64Bytes = make([]byte, base64.StdEncoding.EncodedLen(len(idpBytes)))
+			base64.StdEncoding.Encode(idpCAb64Bytes, []byte(idpBytes))
+		}
 	}
 
 	// load the session cookies
@@ -402,7 +401,7 @@ func generateInfo(w http.ResponseWriter, r *http.Request) *userInfo {
 		IssuerURL:    issuerURL,
 		APIServerURL: cfg.APIServerURL,
 		ClusterCA:    string(caBytes),
-		IDPCA:        string(idpBytes),
+		IDPCAb64:     string(idpCAb64Bytes),
 		HTTPPath:     cfg.HTTPPath,
 		Namespace:    cfg.Namespace,
 	}
