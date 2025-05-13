@@ -27,12 +27,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ghodss/yaml"
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/sighupio/gangplank/internal/oidc"
-	"github.com/sighupio/gangplank/templates"
 	"golang.org/x/oauth2"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api/v1"
+
+	"github.com/ghodss/yaml"
+	"github.com/golang-jwt/jwt/v5"
+
+	"github.com/sighupio/gangplank/internal/oidc"
+	"github.com/sighupio/gangplank/templates"
 )
 
 const (
@@ -52,6 +54,7 @@ type userInfo struct {
 	IssuerURL    string
 	APIServerURL string
 	ClusterCA    string
+	IDPCAb64     string
 	HTTPPath     string
 	Namespace    string
 }
@@ -125,11 +128,12 @@ func generateKubeConfig(cfg *userInfo) clientcmdapi.Config {
 					AuthProvider: &clientcmdapi.AuthProviderConfig{
 						Name: "oidc",
 						Config: map[string]string{
-							"client-id":      cfg.ClientID,
-							"client-secret":  cfg.ClientSecret,
-							"id-token":       cfg.IDToken,
-							"idp-issuer-url": cfg.IssuerURL,
-							"refresh-token":  cfg.RefreshToken,
+							"client-id":                      cfg.ClientID,
+							"client-secret":                  cfg.ClientSecret,
+							"id-token":                       cfg.IDToken,
+							"idp-issuer-url":                 cfg.IssuerURL,
+							"refresh-token":                  cfg.RefreshToken,
+							"idp-certificate-authority-data": string(cfg.IDPCAb64),
 						},
 					},
 				},
@@ -165,7 +169,6 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
-
 	b := make([]byte, 32)
 	rand.Read(b)
 	state := url.QueryEscape(base64.StdEncoding.EncodeToString(b))
@@ -290,21 +293,39 @@ func kubeConfigHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func generateInfo(w http.ResponseWriter, r *http.Request) *userInfo {
-	// read in public ca.crt to output in commandline copy/paste commands
-	file, err := os.Open(cfg.ClusterCAPath)
-	if err != nil {
-		// let us know that we couldn't open the file. This only cause missing output
-		// does not impact actual function of program
-		slog.Error("Failed to open CA file", "error", err)
-	}
-	defer file.Close()
-	caBytes, err := io.ReadAll(file)
-	if err != nil {
-		slog.Warn("Could not read CA file", "error", err)
-	}
+	caBytes := []byte{}
+	idpCAb64Bytes := []byte{}
 
-	if cfg.RemoveCAFromKubeconfig {
-		caBytes = []byte{}
+	if !cfg.RemoveCAFromKubeconfig {
+		// read in public ca.crt to output in commandline copy/paste commands
+		file, err := os.Open(cfg.ClusterCAPath)
+		if err != nil {
+			// let us know that we couldn't open the file. This only cause missing output
+			// does not impact actual function of program
+			slog.Error("Failed to open CA file", "error", err)
+		}
+		defer file.Close()
+		caBytes, err = io.ReadAll(file)
+		if err != nil {
+			slog.Warn("Could not read IDP file", "error", err)
+		}
+
+		if cfg.IDPCAPath != "" {
+			// read in public ca.crt to output in commandline copy/paste commands
+			file, err = os.Open(cfg.IDPCAPath)
+			if err != nil {
+				// let us know that we couldn't open the file. This only cause missing output
+				// does not impact actual function of program
+				slog.Error("Failed to open IDP file", "error", err)
+			}
+			defer file.Close()
+			idpBytes, err := io.ReadAll(file)
+			if err != nil {
+				slog.Warn("Could not read IDP file", "error", err)
+			}
+			idpCAb64Bytes = make([]byte, base64.StdEncoding.EncodedLen(len(idpBytes)))
+			base64.StdEncoding.Encode(idpCAb64Bytes, []byte(idpBytes))
+		}
 	}
 
 	// load the session cookies
@@ -380,6 +401,7 @@ func generateInfo(w http.ResponseWriter, r *http.Request) *userInfo {
 		IssuerURL:    issuerURL,
 		APIServerURL: cfg.APIServerURL,
 		ClusterCA:    string(caBytes),
+		IDPCAb64:     string(idpCAb64Bytes),
 		HTTPPath:     cfg.HTTPPath,
 		Namespace:    cfg.Namespace,
 	}
