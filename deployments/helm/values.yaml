@@ -22,7 +22,6 @@ image:
 
 replicas: 1
 imagePullSecrets: []
-podAnnotations: {}
 podSecurityContext: {}
 securityContext: {}
 resources: {}
@@ -30,6 +29,12 @@ nodeSelector: {}
 tolerations: []
 affinity: {}
 command: ["gangplank", "-config", "/etc/gangplank/config.yaml"]
+
+podAnnotations: {}
+podLabels: {}
+
+volumes: []
+volumeMounts: []
 
 service:
   type: ClusterIP
@@ -47,6 +52,7 @@ ingress:
   tls: []
 
 envs: {}
+envFrom: []
 sensitiveEnvs:
   GANGPLANK_CONFIG_SESSION_SECURITY_KEY: session-security-key
 config:
