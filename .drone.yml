@@ -18,34 +18,49 @@ name: main
 
 steps:
   - name: prepare
-    image: quay.io/sighup/golang:1.22.1
+    image: quay.io/sighup/mise:v2025.4.4
     commands:
       - mkdir -p .go/cache .go/modcache .go/tmp
+      - mise install
+      - eval "$(mise activate bash --shims)"
       - go mod download
     environment:
+      MISE_DATA_DIR: /mise-data
+      CGO_ENABLED: 0
       GOCACHE: /drone/src/.go/cache
       GOMODCACHE: /drone/src/.go/modcache
       GOTMPDIR: /drone/src/.go/tmp
+    volumes:
+      - name: mise-cache
+        path: /mise-data
     depends_on:
       - clone
 
   - name: check-license
-    image: quay.io/sighup/golang:1.22.1
-    pull: always
+    image: quay.io/sighup/mise:v2025.4.4
     commands:
-      - make license-check
+      - eval "$(mise activate bash --shims)"
+      - mise run license-check
     environment:
+      MISE_DATA_DIR: /mise-data
+      CGO_ENABLED: 0
       GOCACHE: /drone/src/.go/cache
       GOMODCACHE: /drone/src/.go/modcache
       GOTMPDIR: /drone/src/.go/tmp
+    volumes:
+      - name: mise-cache
+        path: /mise-data
     depends_on:
       - prepare
 
   - name: build
-    image: quay.io/sighup/golang:1.22.1
+    image: quay.io/sighup/mise:v2025.4.4
     commands:
-      - make build
+      - eval "$(mise activate bash --shims)"
+      - mise run build
     environment:
+      MISE_DATA_DIR: /mise-data
+      CGO_ENABLED: 0
       GOCACHE: /drone/src/.go/cache
       GOMODCACHE: /drone/src/.go/modcache
       GOTMPDIR: /drone/src/.go/tmp
@@ -54,6 +69,8 @@ steps:
     volumes:
       - name: dockersock
         path: /var/run/docker.sock
+      - name: mise-cache
+        path: /mise-data
     depends_on:
       - check-license
     when:
@@ -62,14 +79,17 @@ steps:
           - refs/tags/v**
 
   - name: release
-    image: quay.io/sighup/golang:1.22.1
+    image: quay.io/sighup/mise:v2025.4.4
     commands:
+      - eval "$(mise activate bash --shims)"
       - mkdir -p /root/.docker
       - printf "%s" "$DOCKER_CONFIG_JSON" > /root/.docker/config.json
       - git reset --hard
       - git fetch --tags
-      - make release
+      - mise run release
     environment:
+      MISE_DATA_DIR: /mise-data
+      CGO_ENABLED: 0
       GOCACHE: /drone/src/.go/cache
       GOMODCACHE: /drone/src/.go/modcache
       GOTMPDIR: /drone/src/.go/tmp
@@ -84,6 +104,8 @@ steps:
     volumes:
       - name: dockersock
         path: /var/run/docker.sock
+      - name: mise-cache
+        path: /mise-data
     depends_on:
       - check-license
     when:
@@ -95,6 +117,9 @@ volumes:
   - name: dockersock
     host:
       path: /var/run/docker.sock
+  - name: mise-cache
+    host:
+      path: /root/mise_data_dir
 
 trigger:
   event:
