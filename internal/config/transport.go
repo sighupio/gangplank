@@ -62,9 +62,8 @@ func NewTransportConfig(trustedCAPath string) *TransportConfig {
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
 		TLSClientConfig: &tls.Config{
-			RootCAs:                  rootCAs,
-			PreferServerCipherSuites: true,
-			MinVersion:               tls.VersionTLS12,
+			RootCAs:    rootCAs,
+			MinVersion: tls.VersionTLS12,
 		},
 	}
 
