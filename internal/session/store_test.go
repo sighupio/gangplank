@@ -90,6 +90,29 @@ func TestSplitCookieSize(t *testing.T) {
 	}
 }
 
+func assertCookieOptions(t *testing.T, s *CustomCookieStore, wantSecure bool, wantSameSite http.SameSite) {
+	t.Helper()
+	if s.Options == nil {
+		t.Fatal("Options is nil")
+	}
+	if s.Options.Secure != wantSecure {
+		t.Errorf("Secure = %v, want %v", s.Options.Secure, wantSecure)
+	}
+	if s.Options.SameSite != wantSameSite {
+		t.Errorf("SameSite = %v, want %v", s.Options.SameSite, wantSameSite)
+	}
+}
+
+func TestNewCustomCookieStoreOptionsHTTPS(t *testing.T) {
+	s := NewCustomCookieStore(true, []byte("test-signing-key-32bytes!!"), []byte("test-encryption-key"))
+	assertCookieOptions(t, s, true, http.SameSiteLaxMode)
+}
+
+func TestNewCustomCookieStoreOptionsHTTP(t *testing.T) {
+	s := NewCustomCookieStore(false, []byte("test-signing-key-32bytes!!"), []byte("test-encryption-key"))
+	assertCookieOptions(t, s, false, http.SameSiteLaxMode)
+}
+
 func TestSplitAndJoin(t *testing.T) {
 	cookieLength := 10000
 	originalValue := randStringBytesRmndr(cookieLength)

@@ -30,8 +30,8 @@ import (
 	"golang.org/x/oauth2"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api/v1"
 
-	"github.com/ghodss/yaml"
 	"github.com/golang-jwt/jwt/v5"
+	"sigs.k8s.io/yaml"
 
 	"github.com/sighupio/gangplank/internal/oidc"
 	"github.com/sighupio/gangplank/templates"

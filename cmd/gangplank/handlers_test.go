@@ -29,8 +29,8 @@ import (
 	"golang.org/x/oauth2"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api/v1"
 
-	"github.com/ghodss/yaml"
 	"github.com/gorilla/sessions"
+	"sigs.k8s.io/yaml"
 
 	"github.com/sighupio/gangplank/internal/config"
 	"github.com/sighupio/gangplank/internal/session"
@@ -38,7 +38,7 @@ import (
 
 func testInit() {
 	var err error
-	gangplankUserSession, err = session.New("test")
+	gangplankUserSession, err = session.New("test", false)
 	if err != nil {
 		panic(err)
 	}
@@ -448,7 +448,7 @@ func TestUnauthedCommandlineHandlerRedirect(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	session.New("test") //nolint:errcheck
+	session.New("test", false)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(commandlineHandler)

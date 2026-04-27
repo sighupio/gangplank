@@ -28,14 +28,14 @@ type Session struct {
 }
 
 // New inits a Session with CookieStore
-func New(sessionSecurityKey string) (*Session, error) {
+func New(sessionSecurityKey string, secureCookies bool) (*Session, error) {
 	signingKey, encryptionKey, err := generateSessionKeys(sessionSecurityKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate session keys: %w", err)
 	}
 
 	return &Session{
-		Session: NewCustomCookieStore(signingKey, encryptionKey),
+		Session: NewCustomCookieStore(secureCookies, signingKey, encryptionKey),
 	}, nil
 }
 

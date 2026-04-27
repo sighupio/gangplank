@@ -85,7 +85,7 @@ func main() {
 	}
 
 	transportConfig = config.NewTransportConfig(cfg.TrustedCAPath)
-	gangplankUserSession, err = session.New(cfg.SessionSecurityKey)
+	gangplankUserSession, err = session.New(cfg.SessionSecurityKey, cfg.ServeTLS)
 	if err != nil {
 		slog.Error("Failed to create session", "error", err)
 		os.Exit(1)

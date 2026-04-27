@@ -18,7 +18,7 @@ import (
 	"os"
 	"strings"
 
-	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 
 	"github.com/kelseyhightower/envconfig"
 )
@@ -80,7 +80,7 @@ func NewConfig(configFile string) (*Config, error) {
 			return nil, err
 		}
 
-		err = yaml.Unmarshal([]byte(data), cfg)
+		err = yaml.Unmarshal(data, cfg)
 		if err != nil {
 			return nil, err
 		}

@@ -34,9 +34,11 @@ type CustomCookieStore struct {
 	*sessions.CookieStore
 }
 
-// Set secureCookie maxLength to an arbitrary (20x4kb) high value since we are no longer limited
-func NewCustomCookieStore(keyPairs ...[]byte) *CustomCookieStore {
+// NewCustomCookieStore Set secureCookie maxLength to an arbitrary (20x4kb) high value since we are no longer limited
+func NewCustomCookieStore(secureCookies bool, keyPairs ...[]byte) *CustomCookieStore {
 	cookieStore := sessions.NewCookieStore(keyPairs...)
+	cookieStore.Options.Secure = secureCookies
+	cookieStore.Options.SameSite = http.SameSiteLaxMode
 	for _, codec := range cookieStore.Codecs {
 		cookie := codec.(*securecookie.SecureCookie)
 		cookie.MaxLength(81920)

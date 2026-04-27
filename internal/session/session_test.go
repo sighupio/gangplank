@@ -34,7 +34,7 @@ func TestGenerateSessionKeys(t *testing.T) {
 }
 
 func TestInitSessionStore(t *testing.T) {
-	s, err := New("testing")
+	s, err := New("testing", false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -46,7 +46,7 @@ func TestInitSessionStore(t *testing.T) {
 }
 
 func TestCleanupSession(t *testing.T) {
-	s, err := New("testing")
+	s, err := New("testing", false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
