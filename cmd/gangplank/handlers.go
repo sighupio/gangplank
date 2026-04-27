@@ -303,11 +303,12 @@ func generateInfo(w http.ResponseWriter, r *http.Request) *userInfo {
 			// let us know that we couldn't open the file. This only cause missing output
 			// does not impact actual function of program
 			slog.Error("Failed to open CA file", "error", err)
-		}
-		defer file.Close()
-		caBytes, err = io.ReadAll(file)
-		if err != nil {
-			slog.Warn("Could not read IDP file", "error", err)
+		} else {
+			defer file.Close()
+			caBytes, err = io.ReadAll(file)
+			if err != nil {
+				slog.Warn("Could not read CA file", "error", err)
+			}
 		}
 
 		if cfg.IDPCAPath != "" {
@@ -317,14 +318,16 @@ func generateInfo(w http.ResponseWriter, r *http.Request) *userInfo {
 				// let us know that we couldn't open the file. This only cause missing output
 				// does not impact actual function of program
 				slog.Error("Failed to open IDP file", "error", err)
+			} else {
+				defer file.Close()
+				idpBytes, err := io.ReadAll(file)
+				if err != nil {
+					slog.Warn("Could not read IDP file", "error", err)
+				} else {
+					idpCAb64Bytes = make([]byte, base64.StdEncoding.EncodedLen(len(idpBytes)))
+					base64.StdEncoding.Encode(idpCAb64Bytes, idpBytes)
+				}
 			}
-			defer file.Close()
-			idpBytes, err := io.ReadAll(file)
-			if err != nil {
-				slog.Warn("Could not read IDP file", "error", err)
-			}
-			idpCAb64Bytes = make([]byte, base64.StdEncoding.EncodedLen(len(idpBytes)))
-			base64.StdEncoding.Encode(idpCAb64Bytes, []byte(idpBytes))
 		}
 	}
 
