@@ -1,6 +1,6 @@
 module github.com/sighupio/gangplank
 
-go 1.22
+go 1.22.10
 
 require (
 	github.com/ghodss/yaml v1.0.0
