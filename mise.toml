@@ -15,7 +15,7 @@
 experimental = true
 
 [tools]
-golang = "1.23.12"
+golang = "1.24.12"
 goreleaser = "1.24.0"
 tilt = "0.33.11"
 ctlptl = "0.8.28"

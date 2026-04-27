@@ -37,7 +37,11 @@ import (
 )
 
 func testInit() {
-	gangplankUserSession = session.New("test")
+	var err error
+	gangplankUserSession, err = session.New("test")
+	if err != nil {
+		panic(err)
+	}
 	transportConfig = config.NewTransportConfig("")
 
 	oauth2Cfg = &oauth2.Config{
@@ -444,7 +448,7 @@ func TestUnauthedCommandlineHandlerRedirect(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	session.New("test")
+	session.New("test") //nolint:errcheck
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(commandlineHandler)

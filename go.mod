@@ -1,6 +1,6 @@
 module github.com/sighupio/gangplank
 
-go 1.23.12
+go 1.24.12
 
 require (
 	github.com/ghodss/yaml v1.0.0
@@ -9,7 +9,6 @@ require (
 	github.com/gorilla/sessions v1.2.2
 	github.com/justinas/alice v1.2.0
 	github.com/kelseyhightower/envconfig v1.4.0
-	golang.org/x/crypto v0.21.0
 	golang.org/x/oauth2 v0.18.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/client-go v0.29.2

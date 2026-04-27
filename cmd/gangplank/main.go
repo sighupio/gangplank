@@ -85,7 +85,11 @@ func main() {
 	}
 
 	transportConfig = config.NewTransportConfig(cfg.TrustedCAPath)
-	gangplankUserSession = session.New(cfg.SessionSecurityKey)
+	gangplankUserSession, err = session.New(cfg.SessionSecurityKey)
+	if err != nil {
+		slog.Error("Failed to create session", "error", err)
+		os.Exit(1)
+	}
 
 	loginRequiredHandlers := alice.New(loginRequired)
 

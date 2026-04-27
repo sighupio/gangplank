@@ -14,10 +14,10 @@
 package session
 
 import (
+	"crypto/pbkdf2"
 	"crypto/sha256"
+	"fmt"
 	"net/http"
-
-	"golang.org/x/crypto/pbkdf2"
 )
 
 const salt = "MkmfuPNHnZBBivy0L0aW"
@@ -28,23 +28,32 @@ type Session struct {
 }
 
 // New inits a Session with CookieStore
-func New(sessionSecurityKey string) *Session {
-	return &Session{
-		Session: NewCustomCookieStore(generateSessionKeys(sessionSecurityKey)),
+func New(sessionSecurityKey string) (*Session, error) {
+	signingKey, encryptionKey, err := generateSessionKeys(sessionSecurityKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate session keys: %w", err)
 	}
+
+	return &Session{
+		Session: NewCustomCookieStore(signingKey, encryptionKey),
+	}, nil
 }
 
 // generateSessionKeys creates a signed encryption key for the cookie store
-func generateSessionKeys(sessionSecurityKey string) ([]byte, []byte) {
+func generateSessionKeys(sessionSecurityKey string) (signingKey []byte, encryptionKey []byte, err error) {
 	// Take the configured security key and generate 96 bytes of data. This is
 	// used as the signing and encryption keys for the cookie store.  For details
 	// on the PBKDF2 function: https://en.wikipedia.org/wiki/PBKDF2
-	b := pbkdf2.Key(
-		[]byte(sessionSecurityKey),
+	derivedKey, err := pbkdf2.Key(
+		sha256.New,
+		sessionSecurityKey,
 		[]byte(salt),
-		4096, 96, sha256.New)
+		4096, 96)
+	if err != nil {
+		return nil, nil, err
+	}
 
-	return b[0:64], b[64:96]
+	return derivedKey[0:64], derivedKey[64:96], nil
 }
 
 // Cleanup removes the current session from the store
