@@ -33,7 +33,7 @@ type Token struct {
 
 // ParseToken returns a jwt token from an idToken, returns error if it cannot parse
 func ParseToken(idToken, clientSecret string) (*jwt.Token, error) {
-	token, _ := jwt.Parse(idToken, func(token *jwt.Token) (interface{}, error) {
+	token, _ := jwt.Parse(idToken, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}

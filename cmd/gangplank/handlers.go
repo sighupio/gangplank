@@ -37,10 +37,6 @@ import (
 	"github.com/sighupio/gangplank/templates"
 )
 
-const (
-	templatesBase = "/templates"
-)
-
 // userInfo stores information about an authenticated user
 type userInfo struct {
 	ClusterName  string
@@ -64,7 +60,7 @@ type homeInfo struct {
 	HTTPPath string
 }
 
-func serveTemplate(tmplFile string, data interface{}, w http.ResponseWriter) {
+func serveTemplate(tmplFile string, data any, w http.ResponseWriter) {
 	tmpl := htmltemplate.New(tmplFile)
 
 	// Use custom templates if provided
@@ -160,7 +156,7 @@ func loginRequired(next http.Handler) http.Handler {
 	})
 }
 
-func homeHandler(w http.ResponseWriter, r *http.Request) {
+func homeHandler(w http.ResponseWriter, _ *http.Request) {
 	data := &homeInfo{
 		HTTPPath: cfg.HTTPPath,
 	}

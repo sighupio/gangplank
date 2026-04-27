@@ -53,7 +53,7 @@ func generateSessionKeys(sessionSecurityKey string) (signingKey []byte, encrypti
 		return nil, nil, err
 	}
 
-	return derivedKey[0:64], derivedKey[64:96], nil
+	return derivedKey[:64], derivedKey[64:], nil
 }
 
 // Cleanup removes the current session from the store
