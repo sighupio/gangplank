@@ -474,3 +474,51 @@ samp {
   display: block;
   margin: 8px 0;
 }
+
+.kubeconfig-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.kubeconfig-form button {
+  border: none;
+  font-family: inherit;
+}
+
+.kubeconfig-form-label {
+  font-size: 0.8571rem;
+  line-height: 1.2857rem;
+  color: #98a2b3;
+}
+
+.kubeconfig-form-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kubeconfig-filename-input {
+  appearance: none;
+  background-color: #25262e;
+  border: 1px solid #45464e;
+  border-radius: 6px;
+  color: #dfe5ef;
+  font-size: 1rem;
+  line-height: 1.4286rem;
+  padding: 8px 12px;
+  inline-size: 240px;
+  max-inline-size: 100%;
+  text-align: center;
+}
+
+.kubeconfig-filename-input::placeholder {
+  color: #63666b;
+}
+
+.kubeconfig-filename-input:focus {
+  border-color: #36a2ef;
+  outline: none;
+  box-shadow: 0 0 0 1px #36a2ef;
+}

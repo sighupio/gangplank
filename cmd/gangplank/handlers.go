@@ -283,8 +283,14 @@ func kubeConfigHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	filename := r.URL.Query().Get("filename")
+	if filename == "" {
+		filename = info.ClusterName
+	}
+
 	// tell the browser the returned content should be downloaded
-	w.Header().Add("Content-Disposition", "Attachment")
+	w.Header().Set("Content-Type", "application/yaml")
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`Attachment; filename="%s.yaml"`, filename))
 	w.Write(d)
 }
 

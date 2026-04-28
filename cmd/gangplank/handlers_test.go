@@ -272,6 +272,7 @@ func TestKubeconfigHandler(t *testing.T) {
 		expectedStatusCode                 int
 		expectedAuthInfoName               string
 		expectedAuthInfoAuthProviderConfig map[string]string
+		expectedContentDisposition         string
 	}{
 		"default": {
 			cfg: config.Config{
@@ -296,6 +297,33 @@ func TestKubeconfigHandler(t *testing.T) {
 				"idp-issuer-url":                 "GangwayTest",
 				"idp-certificate-authority-data": "ZHVtbXkgY2x1c3RlciBJRFAgQ0E=",
 			},
+			expectedContentDisposition: `Attachment; filename="cluster1.yaml"`,
+		},
+		"custom filename": {
+			cfg: config.Config{
+				UsernameClaim: "sub",
+				ClusterName:   "cluster1",
+				APIServerURL:  "https://kubernetes",
+				ClientID:      "someClientID",
+				ClientSecret:  "someClientSecret",
+			},
+			params: map[string]string{
+				"id_token":      "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJHYW5nd2F5VGVzdCIsImlhdCI6MTU0MDA0NjM0NywiZXhwIjoxODg3MjAxNTQ3LCJhdWQiOiJnYW5nd2F5LmhlcHRpby5jb20iLCJzdWIiOiJnYW5nd2F5QGhlcHRpby5jb20iLCJHaXZlbk5hbWUiOiJHYW5nIiwiU3VybmFtZSI6IldheSIsIkVtYWlsIjoiZ2FuZ3dheUBoZXB0aW8uY29tIiwiR3JvdXBzIjoiZGV2LGFkbWluIn0.zNG4Dnxr76J0p4phfsAUYWunioct0krkMiunMynlQsU",
+				"refresh_token": "bar",
+				"filename":      "my-custom-cluster",
+			},
+			expectedStatusCode:   http.StatusOK,
+			usernameClaim:        "sub",
+			expectedAuthInfoName: "gangway@heptio.com@cluster1",
+			expectedAuthInfoAuthProviderConfig: map[string]string{
+				"client-id":                      "someClientID",
+				"client-secret":                  "someClientSecret",
+				"id-token":                       "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJHYW5nd2F5VGVzdCIsImlhdCI6MTU0MDA0NjM0NywiZXhwIjoxODg3MjAxNTQ3LCJhdWQiOiJnYW5nd2F5LmhlcHRpby5jb20iLCJzdWIiOiJnYW5nd2F5QGhlcHRpby5jb20iLCJHaXZlbk5hbWUiOiJHYW5nIiwiU3VybmFtZSI6IldheSIsIkVtYWlsIjoiZ2FuZ3dheUBoZXB0aW8uY29tIiwiR3JvdXBzIjoiZGV2LGFkbWluIn0.zNG4Dnxr76J0p4phfsAUYWunioct0krkMiunMynlQsU",
+				"refresh-token":                  "bar",
+				"idp-issuer-url":                 "GangwayTest",
+				"idp-certificate-authority-data": "ZHVtbXkgY2x1c3RlciBJRFAgQ0E=",
+			},
+			expectedContentDisposition: `Attachment; filename="my-custom-cluster.yaml"`,
 		},
 	}
 
@@ -376,6 +404,17 @@ func TestKubeconfigHandler(t *testing.T) {
 			if status := rsp.Code; status != tc.expectedStatusCode {
 				t.Errorf("handler returned wrong status code: got %v want %v", status, tc.expectedStatusCode)
 			}
+
+			gotCD := rsp.Header().Get("Content-Disposition")
+			if gotCD != tc.expectedContentDisposition {
+				t.Errorf("Content-Disposition = %q; want %q", gotCD, tc.expectedContentDisposition)
+			}
+
+			gotCT := rsp.Header().Get("Content-Type")
+			if gotCT != "application/yaml" {
+				t.Errorf("Content-Type = %q; want %q", gotCT, "application/yaml")
+			}
+
 			// if response code is OK, validate the kubeconfig
 			if rsp.Code == 200 {
 				bodyBytes, err := io.ReadAll(rsp.Body)

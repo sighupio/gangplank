@@ -53,12 +53,26 @@
           </div>
         </div>
         <div class="euiFlexItem euiFlexItem-growZero">
-          <a href="{{ .HTTPPath }}/kubeconf" rel="noreferrer"
-            class="euiButton euiButtonDisplay-m-defaultMinWidth-base-primary">
-            <span class="euiButtonDisplayContent">
-              <span class="eui-textTruncate">Download Kubeconfig</span>
-            </span>
-          </a>
+          <form method="GET" action="{{ .HTTPPath }}/kubeconf" class="kubeconfig-form">
+            <label for="kubeconfig-filename" class="kubeconfig-form-label">
+              Customize the downloaded kubeconfig filename (optional)
+            </label>
+            <div class="kubeconfig-form-row">
+              <input
+                id="kubeconfig-filename"
+                type="text"
+                name="filename"
+                class="kubeconfig-filename-input"
+                placeholder="{{ .ClusterName }}"
+                autocomplete="off" />
+              <button type="submit"
+                class="euiButton euiButtonDisplay-m-defaultMinWidth-base-primary">
+                <span class="euiButtonDisplayContent">
+                  <span class="eui-textTruncate">Download Kubeconfig</span>
+                </span>
+              </button>
+            </div>
+          </form>
         </div>
         <div class="euiFlexItem euiFlexItem-growZero">
           <div class="euiText euiText-m-euiTextAlign-center">
