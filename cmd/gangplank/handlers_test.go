@@ -297,7 +297,7 @@ func TestKubeconfigHandler(t *testing.T) {
 				"idp-issuer-url":                 "GangwayTest",
 				"idp-certificate-authority-data": "ZHVtbXkgY2x1c3RlciBJRFAgQ0E=",
 			},
-			expectedContentDisposition: `Attachment; filename="cluster1.yaml"`,
+			expectedContentDisposition: `Attachment; filename="gangway@heptio.com@cluster1"`,
 		},
 		"custom filename": {
 			cfg: config.Config{
@@ -323,7 +323,7 @@ func TestKubeconfigHandler(t *testing.T) {
 				"idp-issuer-url":                 "GangwayTest",
 				"idp-certificate-authority-data": "ZHVtbXkgY2x1c3RlciBJRFAgQ0E=",
 			},
-			expectedContentDisposition: `Attachment; filename="my-custom-cluster.yaml"`,
+			expectedContentDisposition: `Attachment; filename="my-custom-cluster"`,
 		},
 	}
 

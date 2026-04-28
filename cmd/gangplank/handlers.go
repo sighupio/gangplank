@@ -285,12 +285,12 @@ func kubeConfigHandler(w http.ResponseWriter, r *http.Request) {
 
 	filename := r.URL.Query().Get("filename")
 	if filename == "" {
-		filename = info.ClusterName
+		filename = info.KubeCfgUser
 	}
 
 	// tell the browser the returned content should be downloaded
 	w.Header().Set("Content-Type", "application/yaml")
-	w.Header().Set("Content-Disposition", fmt.Sprintf(`Attachment; filename="%s.yaml"`, filename))
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`Attachment; filename="%s"`, filename))
 	w.Write(d)
 }
 
