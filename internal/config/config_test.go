@@ -14,7 +14,6 @@
 package config
 
 import (
-	"os"
 	"testing"
 )
 
@@ -26,20 +25,20 @@ func TestConfigNotFound(t *testing.T) {
 }
 
 func TestEnvionmentOverrides(t *testing.T) {
-	os.Setenv("GANGPLANK_CONFIG_AUTHORIZE_URL", "https://foo.bar/authorize")
-	os.Setenv("GANGPLANK_CONFIG_APISERVER_URL", "https://k8s-api.foo.baz")
-	os.Setenv("GANGPLANK_CONFIG_CLIENT_ID", "foo")
-	os.Setenv("GANGPLANK_CONFIG_CLIENT_SECRET", "bar")
-	os.Setenv("GANGPLANK_CONFIG_PORT", "1234")
-	os.Setenv("GANGPLANK_CONFIG_REDIRECT_URL", "https://foo.baz/callback")
-	os.Setenv("GANGPLANK_CONFIG_CLUSTER_CA_PATH", "/etc/ssl/certs/ca-certificates.crt")
-	os.Setenv("GANGPLANK_CONFIG_IDP_CA_PATH", "/etc/ssl/certs/ca-certificates.crt")
-	os.Setenv("GANGPLANK_CONFIG_SESSION_SECURITY_KEY", "testing")
-	os.Setenv("GANGPLANK_CONFIG_TOKEN_URL", "https://foo.bar/token")
-	os.Setenv("GANGPLANK_CONFIG_AUDIENCE", "foo")
-	os.Setenv("GANGPLANK_CONFIG_SCOPES", "groups,sub")
-	os.Setenv("GANGPLANK_CONFIG_REMOVE_CA_FROM_KUBECONFIG", "true")
-	os.Setenv("GANGPLANK_CONFIG_NAMESPACE", "default")
+	t.Setenv("GANGPLANK_CONFIG_AUTHORIZE_URL", "https://foo.bar/authorize")
+	t.Setenv("GANGPLANK_CONFIG_APISERVER_URL", "https://k8s-api.foo.baz")
+	t.Setenv("GANGPLANK_CONFIG_CLIENT_ID", "foo")
+	t.Setenv("GANGPLANK_CONFIG_CLIENT_SECRET", "bar")
+	t.Setenv("GANGPLANK_CONFIG_PORT", "1234")
+	t.Setenv("GANGPLANK_CONFIG_REDIRECT_URL", "https://foo.baz/callback")
+	t.Setenv("GANGPLANK_CONFIG_CLUSTER_CA_PATH", "/etc/ssl/certs/ca-certificates.crt")
+	t.Setenv("GANGPLANK_CONFIG_IDP_CA_PATH", "/etc/ssl/certs/ca-certificates.crt")
+	t.Setenv("GANGPLANK_CONFIG_SESSION_SECURITY_KEY", "testing")
+	t.Setenv("GANGPLANK_CONFIG_TOKEN_URL", "https://foo.bar/token")
+	t.Setenv("GANGPLANK_CONFIG_AUDIENCE", "foo")
+	t.Setenv("GANGPLANK_CONFIG_SCOPES", "groups,sub")
+	t.Setenv("GANGPLANK_CONFIG_REMOVE_CA_FROM_KUBECONFIG", "true")
+	t.Setenv("GANGPLANK_CONFIG_NAMESPACE", "default")
 	cfg, err := NewConfig("")
 	if err != nil {
 		t.Errorf("Failed to test config overrides with error: %s", err)

@@ -29,15 +29,19 @@ import (
 	"golang.org/x/oauth2"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api/v1"
 
-	"github.com/ghodss/yaml"
 	"github.com/gorilla/sessions"
+	"sigs.k8s.io/yaml"
 
 	"github.com/sighupio/gangplank/internal/config"
 	"github.com/sighupio/gangplank/internal/session"
 )
 
 func testInit() {
-	gangplankUserSession = session.New("test")
+	var err error
+	gangplankUserSession, err = session.New("test", false)
+	if err != nil {
+		panic(err)
+	}
 	transportConfig = config.NewTransportConfig("")
 
 	oauth2Cfg = &oauth2.Config{
@@ -290,7 +294,7 @@ func TestKubeconfigHandler(t *testing.T) {
 				"id-token":                       "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJHYW5nd2F5VGVzdCIsImlhdCI6MTU0MDA0NjM0NywiZXhwIjoxODg3MjAxNTQ3LCJhdWQiOiJnYW5nd2F5LmhlcHRpby5jb20iLCJzdWIiOiJnYW5nd2F5QGhlcHRpby5jb20iLCJHaXZlbk5hbWUiOiJHYW5nIiwiU3VybmFtZSI6IldheSIsIkVtYWlsIjoiZ2FuZ3dheUBoZXB0aW8uY29tIiwiR3JvdXBzIjoiZGV2LGFkbWluIn0.zNG4Dnxr76J0p4phfsAUYWunioct0krkMiunMynlQsU",
 				"refresh-token":                  "bar",
 				"idp-issuer-url":                 "GangwayTest",
-				"idp-certificate-authority-data": "dummy cluster IDP CA",
+				"idp-certificate-authority-data": "ZHVtbXkgY2x1c3RlciBJRFAgQ0E=",
 			},
 		},
 	}
@@ -444,7 +448,7 @@ func TestUnauthedCommandlineHandlerRedirect(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	session.New("test")
+	session.New("test", false)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(commandlineHandler)

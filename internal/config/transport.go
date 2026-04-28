@@ -55,16 +55,14 @@ func NewTransportConfig(trustedCAPath string) *TransportConfig {
 		DialContext: (&net.Dialer{
 			Timeout:   30 * time.Second,
 			KeepAlive: 30 * time.Second,
-			DualStack: true,
 		}).DialContext,
 		MaxIdleConns:          100,
 		IdleConnTimeout:       90 * time.Second,
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
 		TLSClientConfig: &tls.Config{
-			RootCAs:                  rootCAs,
-			PreferServerCipherSuites: true,
-			MinVersion:               tls.VersionTLS12,
+			RootCAs:    rootCAs,
+			MinVersion: tls.VersionTLS12,
 		},
 	}
 

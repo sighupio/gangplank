@@ -30,15 +30,11 @@ import (
 	"golang.org/x/oauth2"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api/v1"
 
-	"github.com/ghodss/yaml"
 	"github.com/golang-jwt/jwt/v5"
+	"sigs.k8s.io/yaml"
 
 	"github.com/sighupio/gangplank/internal/oidc"
 	"github.com/sighupio/gangplank/templates"
-)
-
-const (
-	templatesBase = "/templates"
 )
 
 // userInfo stores information about an authenticated user
@@ -64,7 +60,7 @@ type homeInfo struct {
 	HTTPPath string
 }
 
-func serveTemplate(tmplFile string, data interface{}, w http.ResponseWriter) {
+func serveTemplate(tmplFile string, data any, w http.ResponseWriter) {
 	tmpl := htmltemplate.New(tmplFile)
 
 	// Use custom templates if provided
@@ -160,7 +156,7 @@ func loginRequired(next http.Handler) http.Handler {
 	})
 }
 
-func homeHandler(w http.ResponseWriter, r *http.Request) {
+func homeHandler(w http.ResponseWriter, _ *http.Request) {
 	data := &homeInfo{
 		HTTPPath: cfg.HTTPPath,
 	}
@@ -303,11 +299,12 @@ func generateInfo(w http.ResponseWriter, r *http.Request) *userInfo {
 			// let us know that we couldn't open the file. This only cause missing output
 			// does not impact actual function of program
 			slog.Error("Failed to open CA file", "error", err)
-		}
-		defer file.Close()
-		caBytes, err = io.ReadAll(file)
-		if err != nil {
-			slog.Warn("Could not read IDP file", "error", err)
+		} else {
+			defer file.Close()
+			caBytes, err = io.ReadAll(file)
+			if err != nil {
+				slog.Warn("Could not read CA file", "error", err)
+			}
 		}
 
 		if cfg.IDPCAPath != "" {
@@ -317,14 +314,16 @@ func generateInfo(w http.ResponseWriter, r *http.Request) *userInfo {
 				// let us know that we couldn't open the file. This only cause missing output
 				// does not impact actual function of program
 				slog.Error("Failed to open IDP file", "error", err)
+			} else {
+				defer file.Close()
+				idpBytes, err := io.ReadAll(file)
+				if err != nil {
+					slog.Warn("Could not read IDP file", "error", err)
+				} else {
+					idpCAb64Bytes = make([]byte, base64.StdEncoding.EncodedLen(len(idpBytes)))
+					base64.StdEncoding.Encode(idpCAb64Bytes, idpBytes)
+				}
 			}
-			defer file.Close()
-			idpBytes, err := io.ReadAll(file)
-			if err != nil {
-				slog.Warn("Could not read IDP file", "error", err)
-			}
-			idpCAb64Bytes = make([]byte, base64.StdEncoding.EncodedLen(len(idpBytes)))
-			base64.StdEncoding.Encode(idpCAb64Bytes, []byte(idpBytes))
 		}
 	}
 

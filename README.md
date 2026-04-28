@@ -50,8 +50,8 @@ Gangplank requires that the Kubernetes API server is configured to use OIDC for 
 
 ## Build
 
-The project uses [asdf](https://github.com/asdf-vm/asdf) to manage the build tools. After installing the required tools, the following command will build the Gangplank binary and the container image:
+The project uses [mise](https://mise.jdx.dev) to manage the build tools. After installing the required tools, the following command will build the Gangplank binary and the container image:
 
 ```bash
-make build
+mise run build
 ```

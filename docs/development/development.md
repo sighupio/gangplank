@@ -38,6 +38,6 @@ We added the `GANGPLANK_CONFIG_REMOVE_CA_FROM_KUBECONFIG` configuration to remov
 <details>
   <summary>Answer</summary>
   
-To set up a local development environment, you can use the script `make dev-up`. This will create a local Kubernetes cluster using Kind, and it will install both Dex and Gangplank directly from the local source code. Once you are done with development or testing, you can tear down the environment by running `make dev-down`. This will clean up the Kubernetes cluster and any resources created during the session.
+To set up a local development environment, you can use the script `mise run dev-up`. This will create a local Kubernetes cluster using Kind, and it will install both Dex and Gangplank directly from the local source code. Once you are done with development or testing, you can tear down the environment by running `mise run dev-down`. This will clean up the Kubernetes cluster and any resources created during the session.
 
 </details>

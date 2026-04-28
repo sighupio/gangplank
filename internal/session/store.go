@@ -34,9 +34,11 @@ type CustomCookieStore struct {
 	*sessions.CookieStore
 }
 
-// Set secureCookie maxLength to an arbitrary (20x4kb) high value since we are no longer limited
-func NewCustomCookieStore(keyPairs ...[]byte) *CustomCookieStore {
+// NewCustomCookieStore Set secureCookie maxLength to an arbitrary (20x4kb) high value since we are no longer limited
+func NewCustomCookieStore(secureCookies bool, keyPairs ...[]byte) *CustomCookieStore {
 	cookieStore := sessions.NewCookieStore(keyPairs...)
+	cookieStore.Options.Secure = secureCookies
+	cookieStore.Options.SameSite = http.SameSiteLaxMode
 	for _, codec := range cookieStore.Codecs {
 		cookie := codec.(*securecookie.SecureCookie)
 		cookie.MaxLength(81920)
@@ -70,7 +72,7 @@ func (s *CustomCookieStore) New(r *http.Request, name string) (*sessions.Session
 // If the cookie length is > maxCookieLength, its value is split into multiple cookies
 // fitting into the maxCookieLength limit.
 // The resulting section cookies get their index appended to the name.
-func (s *CustomCookieStore) Save(r *http.Request, w http.ResponseWriter,
+func (s *CustomCookieStore) Save(_ *http.Request, w http.ResponseWriter,
 	session *sessions.Session) error {
 
 	cookie, err := securecookie.EncodeMulti(session.Name(), session.Values,
@@ -121,10 +123,7 @@ func splitCookie(cookieValue string) []string {
 	valueBytes := []byte(cookieValue)
 
 	for len(valueBytes) > 0 {
-		length := len(valueBytes)
-		if length > maxCookieLength {
-			length = maxCookieLength
-		}
+		length := min(len(valueBytes), maxCookieLength)
 		sectionCookies = append(sectionCookies, string(valueBytes[:length]))
 		valueBytes = valueBytes[length:]
 	}
