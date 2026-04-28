@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM --platform=$BUILDPLATFORM alpine:3.23 as ca-certificates
+FROM --platform=$BUILDPLATFORM alpine:3.23 AS ca-certificates
 
 RUN apk update
 RUN apk add --no-cache ca-certificates
