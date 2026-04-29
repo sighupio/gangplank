@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+version: 2
 
 project_name: gangplank
 
@@ -35,7 +36,7 @@ checksum:
   name_template: checksums.txt
 
 snapshot:
-  name_template: "{{ incpatch .Version }}-develop"
+  version_template: "{{ incpatch .Version }}-develop"
 
 changelog:
   filters:

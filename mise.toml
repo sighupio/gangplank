@@ -16,7 +16,7 @@ experimental = true
 
 [tools]
 golang = "1.26.2"
-goreleaser = "1.26.2"
+goreleaser = "2.15.4"
 tilt = "0.37.2"
 ctlptl = "0.9.3"
 helm = "4.1.4"
@@ -31,14 +31,14 @@ run = "go test -count=1 -race ./..."
 description = "Build binary and container image (snapshot)"
 run = """
 goreleaser check
-goreleaser release --debug --snapshot --clean
+goreleaser release --snapshot --clean
 """
 
 [tasks.release]
 description = "Build and publish release"
 run = """
 goreleaser check
-goreleaser release --debug --clean
+goreleaser release --clean
 """
 
 [tasks."license-check"]
