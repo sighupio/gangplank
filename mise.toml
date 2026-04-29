@@ -21,7 +21,12 @@ tilt = "0.37.2"
 ctlptl = "0.9.3"
 helm = "4.1.4"
 kind = "0.31.0"
+golangci-lint = "2.11.4"
 "go:github.com/google/addlicense" = "v1.1.1"
+
+[tasks.lint]
+description = "run golangci-lint"
+run = "golangci-lint run ./..."
 
 [tasks.test]
 description = "Run tests"
