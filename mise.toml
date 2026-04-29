@@ -16,10 +16,10 @@ experimental = true
 
 [tools]
 golang = "1.26.2"
-goreleaser = "1.24.0"
-tilt = "0.33.11"
-ctlptl = "0.8.28"
-helm = "3.14.3"
+goreleaser = "1.26.2"
+tilt = "0.37.2"
+ctlptl = "0.9.3"
+helm = "4.1.4"
 kind = "0.31.0"
 "go:github.com/google/addlicense" = "v1.1.1"
 
