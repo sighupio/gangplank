@@ -79,7 +79,7 @@ config:
 
   # The cluster name. Used in UI and kubectl config instructions.
   # Env var: GANGPLANK_CONFIG_CLUSTER_NAME
-  clusterName: "cluster-name"
+  clusterName: "sample-cluster"
 
   # OAuth2 URL to start authorization flow.
   # Env var: GANGPLANK_CONFIG_AUTHORIZE_URL
