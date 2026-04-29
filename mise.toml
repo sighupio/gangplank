@@ -16,12 +16,17 @@ experimental = true
 
 [tools]
 golang = "1.26.2"
-goreleaser = "1.24.0"
-tilt = "0.33.11"
-ctlptl = "0.8.28"
-helm = "3.14.3"
+goreleaser = "2.15.4"
+tilt = "0.37.2"
+ctlptl = "0.9.3"
+helm = "4.1.4"
 kind = "0.31.0"
+golangci-lint = "2.11.4"
 "go:github.com/google/addlicense" = "v1.1.1"
+
+[tasks.lint]
+description = "run golangci-lint"
+run = "golangci-lint run ./..."
 
 [tasks.test]
 description = "Run tests"
@@ -29,11 +34,17 @@ run = "go test -count=1 -race ./..."
 
 [tasks.build]
 description = "Build binary and container image (snapshot)"
-run = "scripts/build.sh"
+run = """
+goreleaser check
+goreleaser release --snapshot --clean
+"""
 
 [tasks.release]
 description = "Build and publish release"
-run = "scripts/release.sh"
+run = """
+goreleaser check
+goreleaser release --clean
+"""
 
 [tasks."license-check"]
 description = "Check license headers"
@@ -42,6 +53,7 @@ addlicense -c "SIGHUP s.r.l" -y 2017-present -v -l apache \
   -ignore "deployments/helm/templates/**/*" \
   -ignore "dist/**/*" \
   -ignore ".go/**/*" \
+  -ignore ".idea/**/*" \
   --check .
 """
 
@@ -57,8 +69,11 @@ addlicense -c "SIGHUP s.r.l" -y 2017-present -v -l apache \
 
 [tasks."dev-up"]
 description = "Start local dev environment (Kind + Tilt)"
-run = "scripts/dev-up.sh"
+run = """
+ctlptl apply -f configs/cluster.yaml
+tilt up
+"""
 
 [tasks."dev-down"]
 description = "Tear down local dev environment"
-run = "scripts/dev-down.sh"
+run = "ctlptl delete --cascade true -f configs/cluster.yaml"
