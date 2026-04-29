@@ -23,12 +23,20 @@ import (
 	"time"
 )
 
-// TransportConfig describes a configured httpClient
+const (
+	dialTimeout         = 30 * time.Second
+	dialKeepAlive       = 30 * time.Second
+	maxIdleConns        = 100
+	idleConnTimeout     = 90 * time.Second
+	tlsHandshakeTimeout = 10 * time.Second
+)
+
+// TransportConfig describes a configured httpClient.
 type TransportConfig struct {
 	HTTPClient *http.Client
 }
 
-// NewTransportConfig returns a TransportConfig with configured httpClient
+// NewTransportConfig returns a TransportConfig with a configured httpClient.
 func NewTransportConfig(trustedCAPath string) *TransportConfig {
 	rootCAs, _ := x509.SystemCertPool()
 	if rootCAs == nil {
@@ -53,12 +61,12 @@ func NewTransportConfig(trustedCAPath string) *TransportConfig {
 	t := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
+			Timeout:   dialTimeout,
+			KeepAlive: dialKeepAlive,
 		}).DialContext,
-		MaxIdleConns:          100,
-		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   10 * time.Second,
+		MaxIdleConns:          maxIdleConns,
+		IdleConnTimeout:       idleConnTimeout,
+		TLSHandshakeTimeout:   tlsHandshakeTimeout,
 		ExpectContinueTimeout: 1 * time.Second,
 		TLSClientConfig: &tls.Config{
 			RootCAs:    rootCAs,

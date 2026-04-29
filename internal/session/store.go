@@ -16,47 +16,53 @@ package session
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
 )
 
 // The CustomCookieStore automatically splits cookies with length greater than maxCookieLength into multiple smaller cookies.
-// The motivation is the browsers' 4KB limit on cookies, which for instance causes problems for large id_tokens in azure.
+// The motivation is the browsers' 4KB limit on cookies, which, for instance, causes problems for large id_tokens in azure.
 
 const (
 	// Cookies are limited to 4kb including the length of the cookie name,
-	// the cookie name can be up to 256 bytes
+	// the cookie name can be up to 256 bytes.
 	maxCookieLength = 3840
+	// maxSecureCookieLength is an arbitrary (20x4kb) high value since we split cookies
+	// and are no longer limited by a single cookie size.
+	maxSecureCookieLength = 81920
 )
 
 type CustomCookieStore struct {
 	*sessions.CookieStore
 }
 
-// NewCustomCookieStore Set secureCookie maxLength to an arbitrary (20x4kb) high value since we are no longer limited
-func NewCustomCookieStore(secureCookies bool, keyPairs ...[]byte) *CustomCookieStore {
+// NewCustomCookieStore Set secureCookie maxLength to an arbitrary (20x4kb) high value since we are no longer limited.
+func NewCustomCookieStore(secureCookies bool, keyPairs ...[]byte) (*CustomCookieStore, error) {
 	cookieStore := sessions.NewCookieStore(keyPairs...)
 	cookieStore.Options.Secure = secureCookies
 	cookieStore.Options.SameSite = http.SameSiteLaxMode
 	for _, codec := range cookieStore.Codecs {
-		cookie := codec.(*securecookie.SecureCookie)
-		cookie.MaxLength(81920)
+		cookie, ok := codec.(*securecookie.SecureCookie)
+		if !ok {
+			return nil, fmt.Errorf("unexpected codec type %T", codec)
+		}
+		cookie.MaxLength(maxSecureCookieLength)
 	}
-	return &CustomCookieStore{cookieStore}
+	return &CustomCookieStore{cookieStore}, nil
 }
 
 func (s *CustomCookieStore) Get(r *http.Request, name string) (*sessions.Session, error) {
 	return sessions.GetRegistry(r).Get(s, name)
 }
 
-// In contrast to default implementation, the session values can be partitioned into
+// New creates a session. In contrast to the default implementation, the session values can be partitioned into
 // multiple cookies.
-// The original cookie is split/joined in its encoded form
+// The original cookie is split/joined in its encoded form.
 func (s *CustomCookieStore) New(r *http.Request, name string) (*sessions.Session, error) {
 	session := sessions.NewSession(s, name)
-	opts := *s.Options
-	session.Options = &opts
+	session.Options = new(*s.Options)
 	session.IsNew = true
 	cookie := joinSectionCookies(r, name)
 	var err error
@@ -69,12 +75,11 @@ func (s *CustomCookieStore) New(r *http.Request, name string) (*sessions.Session
 	return session, err
 }
 
-// If the cookie length is > maxCookieLength, its value is split into multiple cookies
-// fitting into the maxCookieLength limit.
+// Save persists session values. If the cookie length is > maxCookieLength, its value is split
+// into multiple cookies fitting into the maxCookieLength limit.
 // The resulting section cookies get their index appended to the name.
 func (s *CustomCookieStore) Save(_ *http.Request, w http.ResponseWriter,
 	session *sessions.Session) error {
-
 	cookie, err := securecookie.EncodeMulti(session.Name(), session.Values,
 		s.Codecs...)
 	if err != nil {
@@ -98,26 +103,25 @@ func (s *CustomCookieStore) Save(_ *http.Request, w http.ResponseWriter,
 
 // joinCookies concatenates the values of all matching cookies and returns the original, encoded cookievalue string.
 func joinSectionCookies(r *http.Request, name string) string {
-
 	// Exact match without index means only a single cookie exists
 	if c, err := r.Cookie(name); err == nil {
 		return c.Value
 	}
 
-	var joinedValue string
+	var builder strings.Builder
 	for i := 0; true; i++ {
 		cookieName := buildSectionCookieName(name, i)
 		if c, err := r.Cookie(cookieName); err == nil {
-			joinedValue += c.Value
+			builder.WriteString(c.Value)
 		} else {
 			break
 		}
 	}
-	return joinedValue
+	return builder.String()
 }
 
 // splitCookie splits the original encoded cookie value into a slice of cookies which
-// fit within the 4kb cookie limit indexing the cookies from 0
+// fit within the 4kb cookie limit indexing the cookies from 0.
 func splitCookie(cookieValue string) []string {
 	var sectionCookies []string
 	valueBytes := []byte(cookieValue)

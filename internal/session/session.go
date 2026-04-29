@@ -20,27 +20,36 @@ import (
 	"net/http"
 )
 
-const salt = "MkmfuPNHnZBBivy0L0aW"
+const (
+	salt             = "MkmfuPNHnZBBivy0L0aW"
+	pbkdf2Iterations = 4096
+	pbkdf2KeyLength  = 96
+)
 
-// Session defines a Gangplank session
+// Session defines a Gangplank session.
 type Session struct {
 	Session *CustomCookieStore
 }
 
-// New inits a Session with CookieStore
+// New inits a Session with CookieStore.
 func New(sessionSecurityKey string, secureCookies bool) (*Session, error) {
 	signingKey, encryptionKey, err := generateSessionKeys(sessionSecurityKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate session keys: %w", err)
 	}
 
+	store, err := NewCustomCookieStore(secureCookies, signingKey, encryptionKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create cookie store: %w", err)
+	}
+
 	return &Session{
-		Session: NewCustomCookieStore(secureCookies, signingKey, encryptionKey),
+		Session: store,
 	}, nil
 }
 
-// generateSessionKeys creates a signed encryption key for the cookie store
-func generateSessionKeys(sessionSecurityKey string) (signingKey []byte, encryptionKey []byte, err error) {
+// generateSessionKeys creates a signed encryption key for the cookie store.
+func generateSessionKeys(sessionSecurityKey string) ([]byte, []byte, error) {
 	// Take the configured security key and generate 96 bytes of data. This is
 	// used as the signing and encryption keys for the cookie store.  For details
 	// on the PBKDF2 function: https://en.wikipedia.org/wiki/PBKDF2
@@ -48,7 +57,7 @@ func generateSessionKeys(sessionSecurityKey string) (signingKey []byte, encrypti
 		sha256.New,
 		sessionSecurityKey,
 		[]byte(salt),
-		4096, 96)
+		pbkdf2Iterations, pbkdf2KeyLength)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -56,13 +65,25 @@ func generateSessionKeys(sessionSecurityKey string) (signingKey []byte, encrypti
 	return derivedKey[:64], derivedKey[64:], nil
 }
 
-// Cleanup removes the current session from the store
-func (s *Session) Cleanup(w http.ResponseWriter, r *http.Request, name string) {
+// Cleanup removes a single session from the store.
+func (s *Session) Cleanup(w http.ResponseWriter, r *http.Request, name string) error {
 	session, err := s.Session.Get(r, name)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return fmt.Errorf("failed to get session %q: %w", name, err)
 	}
 	session.Options.MaxAge = -1
-	session.Save(r, w)
+	if saveErr := session.Save(r, w); saveErr != nil {
+		return fmt.Errorf("failed to save session %q: %w", name, saveErr)
+	}
+	return nil
+}
+
+// CleanupAll removes multiple sessions from the store.
+func (s *Session) CleanupAll(w http.ResponseWriter, r *http.Request, names ...string) error {
+	for _, name := range names {
+		if err := s.Cleanup(w, r, name); err != nil {
+			return err
+		}
+	}
+	return nil
 }

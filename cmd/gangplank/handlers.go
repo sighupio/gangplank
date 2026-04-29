@@ -19,7 +19,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	htmltemplate "html/template"
-	"io"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -37,7 +36,9 @@ import (
 	"github.com/sighupio/gangplank/templates"
 )
 
-// userInfo stores information about an authenticated user
+const stateTokenBytes = 32
+
+// userInfo stores information about an authenticated user.
 type userInfo struct {
 	ClusterName  string
 	Username     string
@@ -55,17 +56,17 @@ type userInfo struct {
 	Namespace    string
 }
 
-// homeInfo is used to store dynamic properties on
+// homeInfo is used to store dynamic properties on.
 type homeInfo struct {
 	HTTPPath string
 }
 
-func serveTemplate(tmplFile string, data any, w http.ResponseWriter) {
+func (s *server) serveTemplate(tmplFile string, data any, w http.ResponseWriter) {
 	tmpl := htmltemplate.New(tmplFile)
 
 	// Use custom templates if provided
-	if cfg.CustomHTMLTemplatesDir != "" {
-		templatePath := filepath.Join(cfg.CustomHTMLTemplatesDir, tmplFile)
+	if s.cfg.CustomHTMLTemplatesDir != "" {
+		templatePath := filepath.Join(s.cfg.CustomHTMLTemplatesDir, tmplFile)
 		templateData, err := os.ReadFile(templatePath)
 		if err != nil {
 			slog.Error("Failed to find template asset", "asset", tmplFile, "path", templatePath)
@@ -86,10 +87,14 @@ func serveTemplate(tmplFile string, data any, w http.ResponseWriter) {
 		if err != nil {
 			slog.Error("Failed to parse template", "error", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 	}
 
-	tmpl.ExecuteTemplate(w, tmplFile, data)
+	if err := tmpl.ExecuteTemplate(w, tmplFile, data); err != nil {
+		// Headers may already be sent, so we can only log the error.
+		slog.Error("Failed to execute template", "error", err)
+	}
 }
 
 func generateKubeConfig(cfg *userInfo) clientcmdapi.Config {
@@ -129,7 +134,7 @@ func generateKubeConfig(cfg *userInfo) clientcmdapi.Config {
 							"id-token":                       cfg.IDToken,
 							"idp-issuer-url":                 cfg.IssuerURL,
 							"refresh-token":                  cfg.RefreshToken,
-							"idp-certificate-authority-data": string(cfg.IDPCAb64),
+							"idp-certificate-authority-data": cfg.IDPCAb64,
 						},
 					},
 				},
@@ -139,16 +144,23 @@ func generateKubeConfig(cfg *userInfo) clientcmdapi.Config {
 	return kcfg
 }
 
-func loginRequired(next http.Handler) http.Handler {
+// sanitizeFilename replaces characters that could cause header injection.
+func sanitizeFilename(name string) string {
+	return strings.NewReplacer(
+		`"`, "_", `\`, "_", `/`, "_", "\n", "_", "\r", "_",
+	).Replace(name)
+}
+
+func (s *server) loginRequired(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		session, err := gangplankUserSession.Session.Get(r, "gangplank_id_token")
+		session, err := s.gangplankUserSession.Session.Get(r, "gangplank_id_token")
 		if err != nil {
-			http.Redirect(w, r, cfg.GetRootPathPrefix(), http.StatusTemporaryRedirect)
+			http.Redirect(w, r, s.cfg.GetRootPathPrefix(), http.StatusTemporaryRedirect)
 			return
 		}
 
 		if session.Values["id_token"] == nil {
-			http.Redirect(w, r, cfg.GetRootPathPrefix(), http.StatusTemporaryRedirect)
+			http.Redirect(w, r, s.cfg.GetRootPathPrefix(), http.StatusTemporaryRedirect)
 			return
 		}
 
@@ -156,20 +168,21 @@ func loginRequired(next http.Handler) http.Handler {
 	})
 }
 
-func homeHandler(w http.ResponseWriter, _ *http.Request) {
+func (s *server) homeHandler(w http.ResponseWriter, _ *http.Request) {
 	data := &homeInfo{
-		HTTPPath: cfg.HTTPPath,
+		HTTPPath: s.cfg.HTTPPath,
 	}
 
-	serveTemplate("home.tmpl", data, w)
+	s.serveTemplate("home.tmpl", data, w)
 }
 
-func loginHandler(w http.ResponseWriter, r *http.Request) {
-	b := make([]byte, 32)
-	rand.Read(b)
+func (s *server) loginHandler(w http.ResponseWriter, r *http.Request) {
+	b := make([]byte, stateTokenBytes)
+	// From the rand.Read signature: It never returns an error, and always fills b entirely.
+	_, _ = rand.Read(b)
 	state := url.QueryEscape(base64.StdEncoding.EncodeToString(b))
 
-	session, err := gangplankUserSession.Session.Get(r, "gangplank")
+	session, err := s.gangplankUserSession.Session.Get(r, "gangplank")
 	if err != nil {
 		slog.Error("Got an error in login", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -183,36 +196,41 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	audience := oauth2.SetAuthURLParam("audience", cfg.Audience)
-	url := oauth2Cfg.AuthCodeURL(state, audience)
+	audience := oauth2.SetAuthURLParam("audience", s.cfg.Audience)
+	authURL := s.oauth2Cfg.AuthCodeURL(state, audience)
 
-	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+	http.Redirect(w, r, authURL, http.StatusTemporaryRedirect)
 }
 
-func logoutHandler(w http.ResponseWriter, r *http.Request) {
-	gangplankUserSession.Cleanup(w, r, "gangplank")
-	gangplankUserSession.Cleanup(w, r, "gangplank_id_token")
-	gangplankUserSession.Cleanup(w, r, "gangplank_refresh_token")
-	http.Redirect(w, r, cfg.GetRootPathPrefix(), http.StatusTemporaryRedirect)
+func (s *server) cleanupAllSessions(w http.ResponseWriter, r *http.Request) {
+	err := s.gangplankUserSession.CleanupAll(w, r, "gangplank", "gangplank_id_token", "gangplank_refresh_token")
+	if err != nil {
+		slog.Error("Failed to cleanup sessions", "error", err)
+	}
 }
 
-func callbackHandler(w http.ResponseWriter, r *http.Request) {
-	ctx := context.WithValue(r.Context(), oauth2.HTTPClient, transportConfig.HTTPClient)
+func (s *server) logoutHandler(w http.ResponseWriter, r *http.Request) {
+	s.cleanupAllSessions(w, r)
+	http.Redirect(w, r, s.cfg.GetRootPathPrefix(), http.StatusTemporaryRedirect)
+}
+
+func (s *server) callbackHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := context.WithValue(r.Context(), oauth2.HTTPClient, s.transportConfig.HTTPClient)
 
 	// load up session cookies
-	session, err := gangplankUserSession.Session.Get(r, "gangplank")
+	session, err := s.gangplankUserSession.Session.Get(r, "gangplank")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	sessionIDToken, err := gangplankUserSession.Session.Get(r, "gangplank_id_token")
+	sessionIDToken, err := s.gangplankUserSession.Session.Get(r, "gangplank_id_token")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	sessionRefreshToken, err := gangplankUserSession.Session.Get(r, "gangplank_refresh_token")
+	sessionRefreshToken, err := s.gangplankUserSession.Session.Get(r, "gangplank_refresh_token")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -228,7 +246,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	// use the access code to retrieve a token
 	code := r.URL.Query().Get("code")
-	token, err := o2token.Exchange(ctx, code)
+	token, err := s.o2token.Exchange(ctx, code)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -254,22 +272,22 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, fmt.Sprintf("%s/commandline", cfg.HTTPPath), http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("%s/commandline", s.cfg.HTTPPath), http.StatusSeeOther)
 }
 
-func commandlineHandler(w http.ResponseWriter, r *http.Request) {
-	info := generateInfo(w, r)
+func (s *server) commandlineHandler(w http.ResponseWriter, r *http.Request) {
+	info := s.generateInfo(w, r)
 	if info == nil {
 		// generateInfo writes to the ResponseWriter if it encounters an error.
 		// TODO(abrand): Refactor this.
 		return
 	}
 
-	serveTemplate("commandline.tmpl", info, w)
+	s.serveTemplate("commandline.tmpl", info, w)
 }
 
-func kubeConfigHandler(w http.ResponseWriter, r *http.Request) {
-	info := generateInfo(w, r)
+func (s *server) kubeConfigHandler(w http.ResponseWriter, r *http.Request) {
+	info := s.generateInfo(w, r)
 	if info == nil {
 		// generateInfo writes to the ResponseWriter if it encounters an error.
 		// TODO(abrand): Refactor this.
@@ -278,7 +296,7 @@ func kubeConfigHandler(w http.ResponseWriter, r *http.Request) {
 
 	d, err := yaml.Marshal(generateKubeConfig(info))
 	if err != nil {
-		slog.Error("Error creating kubeconfig", "error", err.Error())
+		slog.Error("Error creating kubeconfig", "error", err)
 		http.Error(w, "Error creating kubeconfig", http.StatusInternalServerError)
 		return
 	}
@@ -287,59 +305,28 @@ func kubeConfigHandler(w http.ResponseWriter, r *http.Request) {
 	if filename == "" {
 		filename = info.KubeCfgUser
 	}
+	filename = sanitizeFilename(filename)
 
 	// tell the browser the returned content should be downloaded
 	w.Header().Set("Content-Type", "application/yaml")
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`Attachment; filename="%s"`, filename))
-	w.Write(d)
+	//nolint:gosec // content is yaml.Marshal output served as attachment, not rendered
+	if _, writeErr := w.Write(d); writeErr != nil {
+		// Headers already sent, so we can only log the error.
+		slog.Error("Failed to write kubeconfig response", "error", writeErr)
+	}
 }
 
-func generateInfo(w http.ResponseWriter, r *http.Request) *userInfo {
-	caBytes := []byte{}
-	idpCAb64Bytes := []byte{}
-
-	if !cfg.RemoveCAFromKubeconfig {
-		// read in public ca.crt to output in commandline copy/paste commands
-		file, err := os.Open(cfg.ClusterCAPath)
-		if err != nil {
-			// let us know that we couldn't open the file. This only cause missing output
-			// does not impact actual function of program
-			slog.Error("Failed to open CA file", "error", err)
-		} else {
-			defer file.Close()
-			caBytes, err = io.ReadAll(file)
-			if err != nil {
-				slog.Warn("Could not read CA file", "error", err)
-			}
-		}
-
-		if cfg.IDPCAPath != "" {
-			// read in public ca.crt to output in commandline copy/paste commands
-			file, err = os.Open(cfg.IDPCAPath)
-			if err != nil {
-				// let us know that we couldn't open the file. This only cause missing output
-				// does not impact actual function of program
-				slog.Error("Failed to open IDP file", "error", err)
-			} else {
-				defer file.Close()
-				idpBytes, err := io.ReadAll(file)
-				if err != nil {
-					slog.Warn("Could not read IDP file", "error", err)
-				} else {
-					idpCAb64Bytes = make([]byte, base64.StdEncoding.EncodedLen(len(idpBytes)))
-					base64.StdEncoding.Encode(idpCAb64Bytes, idpBytes)
-				}
-			}
-		}
-	}
+func (s *server) generateInfo(w http.ResponseWriter, r *http.Request) *userInfo {
+	caBytes, idpCAb64Bytes := s.readCAFiles()
 
 	// load the session cookies
-	sessionIDToken, err := gangplankUserSession.Session.Get(r, "gangplank_id_token")
+	sessionIDToken, err := s.gangplankUserSession.Session.Get(r, "gangplank_id_token")
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return nil
 	}
-	sessionRefreshToken, err := gangplankUserSession.Session.Get(r, "gangplank_refresh_token")
+	sessionRefreshToken, err := s.gangplankUserSession.Session.Get(r, "gangplank_refresh_token")
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return nil
@@ -347,41 +334,41 @@ func generateInfo(w http.ResponseWriter, r *http.Request) *userInfo {
 
 	idToken, ok := sessionIDToken.Values["id_token"].(string)
 	if !ok {
-		gangplankUserSession.Cleanup(w, r, "gangplank")
-		gangplankUserSession.Cleanup(w, r, "gangplank_id_token")
-		gangplankUserSession.Cleanup(w, r, "gangplank_refresh_token")
-
+		s.cleanupAllSessions(w, r)
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return nil
 	}
 
 	refreshToken, ok := sessionRefreshToken.Values["refresh_token"].(string)
 	if !ok {
-		gangplankUserSession.Cleanup(w, r, "gangplank")
-		gangplankUserSession.Cleanup(w, r, "gangplank_id_token")
-		gangplankUserSession.Cleanup(w, r, "gangplank_refresh_token")
-
+		s.cleanupAllSessions(w, r)
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return nil
 	}
 
-	jwtToken, err := oidc.ParseToken(idToken, cfg.ClientSecret)
+	jwtToken, err := oidc.ParseToken(idToken, s.cfg.ClientSecret)
 	if err != nil {
 		http.Error(w, "Could not parse JWT", http.StatusInternalServerError)
 		return nil
 	}
 
-	claims := jwtToken.Claims.(jwt.MapClaims)
-	username, ok := claims[cfg.UsernameClaim].(string)
+	claims, ok := jwtToken.Claims.(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Could not parse JWT claims", http.StatusInternalServerError)
+		return nil
+	}
+	username, ok := claims[s.cfg.UsernameClaim].(string)
 	if !ok {
 		http.Error(w, "Could not parse Username claim", http.StatusInternalServerError)
 		return nil
 	}
 
-	kubeCfgUser := strings.Join([]string{username, cfg.ClusterName}, "@")
+	kubeCfgUser := strings.Join([]string{username, s.cfg.ClusterName}, "@")
 
-	if cfg.EmailClaim != "" {
-		slog.Warn("Using the Email Claim config setting is deprecated. Gangplank uses `UsernameClaim@ClusterName`. This field will be removed in a future version.")
+	if s.cfg.EmailClaim != "" {
+		slog.Warn(
+			"Using the Email Claim config setting is deprecated. Gangplank uses `UsernameClaim@ClusterName`. This field will be removed in a future version.",
+		)
 	}
 
 	issuerURL, ok := claims["iss"].(string)
@@ -390,25 +377,52 @@ func generateInfo(w http.ResponseWriter, r *http.Request) *userInfo {
 		return nil
 	}
 
-	if cfg.ClientSecret == "" {
-		slog.Warn("Setting an empty Client Secret should only be done if you have no other option and is an inherent security risk.")
+	if s.cfg.ClientSecret == "" {
+		slog.Warn(
+			"Setting an empty Client Secret should only be done if you have no other option and is an inherent security risk.",
+		)
 	}
 
 	info := &userInfo{
-		ClusterName:  cfg.ClusterName,
+		ClusterName:  s.cfg.ClusterName,
 		Username:     username,
 		Claims:       claims,
 		KubeCfgUser:  kubeCfgUser,
 		IDToken:      idToken,
 		RefreshToken: refreshToken,
-		ClientID:     cfg.ClientID,
-		ClientSecret: cfg.ClientSecret,
+		ClientID:     s.cfg.ClientID,
+		ClientSecret: s.cfg.ClientSecret,
 		IssuerURL:    issuerURL,
-		APIServerURL: cfg.APIServerURL,
+		APIServerURL: s.cfg.APIServerURL,
 		ClusterCA:    string(caBytes),
 		IDPCAb64:     string(idpCAb64Bytes),
-		HTTPPath:     cfg.HTTPPath,
-		Namespace:    cfg.Namespace,
+		HTTPPath:     s.cfg.HTTPPath,
+		Namespace:    s.cfg.Namespace,
 	}
 	return info
+}
+
+func (s *server) readCAFiles() ([]byte, []byte) {
+	if s.cfg.RemoveCAFromKubeconfig {
+		return nil, nil
+	}
+
+	caBytes, err := os.ReadFile(s.cfg.ClusterCAPath)
+	if err != nil {
+		slog.Error("Failed to open CA file", "error", err)
+		return nil, nil
+	}
+
+	var idpCAb64Bytes []byte
+	if s.cfg.IDPCAPath != "" {
+		idpBytes, idpErr := os.ReadFile(s.cfg.IDPCAPath)
+		if idpErr != nil {
+			slog.Error("Failed to open IDP file", "error", idpErr)
+		} else {
+			idpCAb64Bytes = make([]byte, base64.StdEncoding.EncodedLen(len(idpBytes)))
+			base64.StdEncoding.Encode(idpCAb64Bytes, idpBytes)
+		}
+	}
+
+	return caBytes, idpCAb64Bytes
 }

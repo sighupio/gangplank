@@ -57,7 +57,11 @@ func TestEnvionmentOverrides(t *testing.T) {
 	}
 
 	if cfg.RemoveCAFromKubeconfig != true {
-		t.Errorf("Failed to set RemoveCAFromKubeconfig via environment variable. Expected %t but got %t", true, cfg.RemoveCAFromKubeconfig)
+		t.Errorf(
+			"Failed to set RemoveCAFromKubeconfig via environment variable. Expected %t but got %t",
+			true,
+			cfg.RemoveCAFromKubeconfig,
+		)
 	}
 
 	if cfg.Namespace != "default" {

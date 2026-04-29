@@ -42,7 +42,6 @@ func TestInitSessionStore(t *testing.T) {
 		t.Errorf("Session Store is nil. Did not get initialized")
 		return
 	}
-
 }
 
 func TestCleanupSession(t *testing.T) {
@@ -55,7 +54,6 @@ func TestCleanupSession(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		session, _ = s.Session.Get(r, "gangplank")
 		s.Cleanup(w, r, "gangplank")
-
 	}))
 	defer ts.Close()
 	_, err = http.Get(ts.URL)

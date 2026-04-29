@@ -26,32 +26,32 @@ import (
 )
 
 func TestJoinSectionCookies(t *testing.T) {
-	var originalValue string
+	var originalValue strings.Builder
 	var value string
 	cookies := buildRandomCookies(2, 3800, "test_%d")
 	buildRequestWithCookies(t, cookies, func(cookies []*http.Cookie, r *http.Request) {
 		for _, c := range cookies {
-			originalValue += c.Value
+			originalValue.WriteString(c.Value)
 		}
 		value = joinSectionCookies(r, "test")
 	})
-	if value != originalValue {
-		t.Errorf("joinSectionCookies value incorrect: \n value: %s \n originalValue: %s", value, originalValue)
+	if value != originalValue.String() {
+		t.Errorf("joinSectionCookies value incorrect: \n value: %s \n originalValue: %s", value, originalValue.String())
 	}
 }
 
 func TestJoinSectionCookiesSingle(t *testing.T) {
-	var originalValue string
+	var originalValue strings.Builder
 	var value string
 	cookies := buildRandomCookies(1, 2000, "test_%d")
 	buildRequestWithCookies(t, cookies, func(cookies []*http.Cookie, r *http.Request) {
 		for _, c := range cookies {
-			originalValue += c.Value
+			originalValue.WriteString(c.Value)
 		}
 		value = joinSectionCookies(r, "test")
 	})
-	if value != originalValue {
-		t.Errorf("joinSectionCookies value incorrect: \n value: %s \n originalValue: %s", value, originalValue)
+	if value != originalValue.String() {
+		t.Errorf("joinSectionCookies value incorrect: \n value: %s \n originalValue: %s", value, originalValue.String())
 	}
 }
 
@@ -104,12 +104,18 @@ func assertCookieOptions(t *testing.T, s *CustomCookieStore, wantSecure bool, wa
 }
 
 func TestNewCustomCookieStoreOptionsHTTPS(t *testing.T) {
-	s := NewCustomCookieStore(true, []byte("test-signing-key-32bytes!!"), []byte("test-encryption-key"))
+	s, err := NewCustomCookieStore(true, []byte("test-signing-key-32bytes!!"), []byte("test-encryption-key"))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 	assertCookieOptions(t, s, true, http.SameSiteLaxMode)
 }
 
 func TestNewCustomCookieStoreOptionsHTTP(t *testing.T) {
-	s := NewCustomCookieStore(false, []byte("test-signing-key-32bytes!!"), []byte("test-encryption-key"))
+	s, err := NewCustomCookieStore(false, []byte("test-signing-key-32bytes!!"), []byte("test-encryption-key"))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 	assertCookieOptions(t, s, false, http.SameSiteLaxMode)
 }
 
@@ -119,7 +125,7 @@ func TestSplitAndJoin(t *testing.T) {
 	sectionCookies := splitCookie(originalValue)
 	cookies := buildCookiesFromValues(sectionCookies, "test_%d")
 	var value string
-	buildRequestWithCookies(t, cookies, func(cookies []*http.Cookie, r *http.Request) {
+	buildRequestWithCookies(t, cookies, func(_ []*http.Cookie, r *http.Request) {
 		value = joinSectionCookies(r, "test")
 	})
 	if value != originalValue {
@@ -132,7 +138,7 @@ func TestSplitAndJoin(t *testing.T) {
 type handleReq func([]*http.Cookie, *http.Request)
 
 func buildRequestWithCookies(t *testing.T, cookies []*http.Cookie, fn handleReq) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	ts := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
 		for _, cookie := range cookies {
 			r.AddCookie(cookie)
 		}
@@ -148,7 +154,7 @@ func buildRequestWithCookies(t *testing.T, cookies []*http.Cookie, fn handleReq)
 func buildRandomCookies(cookieCount int, cookieLength int, cookieName string) []*http.Cookie {
 	sessionOptions := &sessions.Options{}
 	var cookies []*http.Cookie
-	for i := 0; i < cookieCount; i++ {
+	for i := range cookieCount {
 		value := randStringBytesRmndr(cookieLength)
 		cookie := sessions.NewCookie(fmt.Sprintf(cookieName, i), value, sessionOptions)
 		cookies = append(cookies, cookie)

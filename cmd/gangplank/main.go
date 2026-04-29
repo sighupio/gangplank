@@ -26,20 +26,25 @@ import (
 	"time"
 
 	"github.com/justinas/alice"
+	"golang.org/x/oauth2"
+
 	"github.com/sighupio/gangplank/internal/config"
 	"github.com/sighupio/gangplank/internal/oidc"
 	"github.com/sighupio/gangplank/internal/session"
 	"github.com/sighupio/gangplank/static"
-	"golang.org/x/oauth2"
 )
 
-var cfg *config.Config
-var oauth2Cfg *oauth2.Config
-var o2token oidc.OAuth2Token
-var gangplankUserSession *session.Session
-var transportConfig *config.TransportConfig
+const httpServerTimeout = 10 * time.Second
 
-// wrapper function for http logging
+type server struct {
+	cfg                  *config.Config
+	oauth2Cfg            *oauth2.Config
+	o2token              oidc.OAuth2Token
+	gangplankUserSession *session.Session
+	transportConfig      *config.TransportConfig
+}
+
+// wrapper function for http logging.
 func httpLogger(fn http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer slog.Debug("HTTP log", "method", r.Method, "url", r.URL, "remote-addr", r.RemoteAddr)
@@ -47,29 +52,13 @@ func httpLogger(fn http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func main() {
-	cfgFile := flag.String("config", "", "The config file to use.")
-	logLevel := flag.String("log-level", "info", "The log level to use. (debug, info, warn, error)")
-	flag.Parse()
-
-	var logLevelVar = new(slog.LevelVar)
-
-	h := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: logLevelVar})
-	slog.SetDefault(slog.New(h))
-
-	if err := logLevelVar.UnmarshalText([]byte(*logLevel)); err != nil {
-		slog.Error("Could not parse log level", "error", err)
-		os.Exit(1)
-	}
-
-	var err error
-	cfg, err = config.NewConfig(*cfgFile)
+func newServer(cfgFile string) (*server, error) {
+	cfg, err := config.NewConfig(cfgFile)
 	if err != nil {
-		slog.Error("Could not parse config file", "error", err)
-		os.Exit(1)
+		return nil, fmt.Errorf("could not parse config file: %w", err)
 	}
 
-	oauth2Cfg = &oauth2.Config{
+	oauth2Cfg := &oauth2.Config{
 		ClientID:     cfg.ClientID,
 		ClientSecret: cfg.ClientSecret,
 		RedirectURL:  cfg.RedirectURL,
@@ -80,38 +69,65 @@ func main() {
 		},
 	}
 
-	o2token = &oidc.Token{
-		OAuth2Cfg: oauth2Cfg,
+	userSession, err := session.New(cfg.SessionSecurityKey, cfg.ServeTLS)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create session: %w", err)
 	}
 
-	transportConfig = config.NewTransportConfig(cfg.TrustedCAPath)
-	gangplankUserSession, err = session.New(cfg.SessionSecurityKey, cfg.ServeTLS)
-	if err != nil {
-		slog.Error("Failed to create session", "error", err)
+	return &server{
+		cfg:                  cfg,
+		oauth2Cfg:            oauth2Cfg,
+		o2token:              &oidc.Token{OAuth2Cfg: oauth2Cfg},
+		transportConfig:      config.NewTransportConfig(cfg.TrustedCAPath),
+		gangplankUserSession: userSession,
+	}, nil
+}
+
+func main() {
+	cfgFile := flag.String("config", "", "The config file to use.")
+	logLevel := flag.String("log-level", "info", "The log level to use. (debug, info, warn, error)")
+	flag.Parse()
+
+	logLevelVar := new(slog.LevelVar)
+
+	h := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: logLevelVar})
+	slog.SetDefault(slog.New(h))
+
+	if err := logLevelVar.UnmarshalText([]byte(*logLevel)); err != nil {
+		slog.Error("Could not parse log level", "error", err)
 		os.Exit(1)
 	}
 
-	loginRequiredHandlers := alice.New(loginRequired)
+	s, err := newServer(*cfgFile)
+	if err != nil {
+		slog.Error("Could not initialize server", "error", err)
+		os.Exit(1)
+	}
 
-	http.HandleFunc(cfg.GetRootPathPrefix(), httpLogger(homeHandler))
-	http.HandleFunc(fmt.Sprintf("%s/static/", cfg.HTTPPath), httpLogger(http.StripPrefix(fmt.Sprintf("%s/static/", cfg.HTTPPath), http.FileServerFS(static.FS)).ServeHTTP))
-	http.HandleFunc(fmt.Sprintf("%s/login", cfg.HTTPPath), httpLogger(loginHandler))
-	http.HandleFunc(fmt.Sprintf("%s/callback", cfg.HTTPPath), httpLogger(callbackHandler))
+	loginRequiredHandlers := alice.New(s.loginRequired)
+
+	http.HandleFunc(s.cfg.GetRootPathPrefix(), httpLogger(s.homeHandler))
+	http.HandleFunc(
+		fmt.Sprintf("%s/static/", s.cfg.HTTPPath),
+		httpLogger(http.StripPrefix(fmt.Sprintf("%s/static/", s.cfg.HTTPPath), http.FileServerFS(static.FS)).ServeHTTP),
+	)
+	http.HandleFunc(fmt.Sprintf("%s/login", s.cfg.HTTPPath), httpLogger(s.loginHandler))
+	http.HandleFunc(fmt.Sprintf("%s/callback", s.cfg.HTTPPath), httpLogger(s.callbackHandler))
 
 	// middleware'd routes
-	http.Handle(fmt.Sprintf("%s/logout", cfg.HTTPPath), loginRequiredHandlers.ThenFunc(logoutHandler))
-	http.Handle(fmt.Sprintf("%s/commandline", cfg.HTTPPath), loginRequiredHandlers.ThenFunc(commandlineHandler))
-	http.Handle(fmt.Sprintf("%s/kubeconf", cfg.HTTPPath), loginRequiredHandlers.ThenFunc(kubeConfigHandler))
+	http.Handle(fmt.Sprintf("%s/logout", s.cfg.HTTPPath), loginRequiredHandlers.ThenFunc(s.logoutHandler))
+	http.Handle(fmt.Sprintf("%s/commandline", s.cfg.HTTPPath), loginRequiredHandlers.ThenFunc(s.commandlineHandler))
+	http.Handle(fmt.Sprintf("%s/kubeconf", s.cfg.HTTPPath), loginRequiredHandlers.ThenFunc(s.kubeConfigHandler))
 
-	bindAddr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
+	bindAddr := fmt.Sprintf("%s:%d", s.cfg.Host, s.cfg.Port)
 	// create http server with timeouts
 	httpServer := &http.Server{
 		Addr:         bindAddr,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		ReadTimeout:  httpServerTimeout,
+		WriteTimeout: httpServerTimeout,
 	}
 
-	if cfg.ServeTLS {
+	if s.cfg.ServeTLS {
 		// update http server with TLS config
 		httpServer.TLSConfig = &tls.Config{
 			CipherSuites: []uint16{
@@ -121,8 +137,6 @@ func main() {
 				tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
 				tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
 				tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,
-				tls.TLS_RSA_WITH_AES_128_GCM_SHA256,
-				tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
 			},
 			MinVersion: tls.VersionTLS12,
 		}
@@ -134,25 +148,31 @@ func main() {
 
 		// exit with FATAL logging why we could not start
 		// example: FATA[0000] listen tcp 0.0.0.0:8080: bind: address already in use
-		if cfg.ServeTLS {
-			if err := httpServer.ListenAndServeTLS(cfg.CertFile, cfg.KeyFile); err != nil {
-				slog.Error("Could not start HTTPS server", "error", err)
+		if s.cfg.ServeTLS {
+			if serveErr := httpServer.ListenAndServeTLS(s.cfg.CertFile, s.cfg.KeyFile); serveErr != nil {
+				slog.Error("Could not start HTTPS server", "error", serveErr)
 				os.Exit(1)
 			}
 		} else {
-			if err := httpServer.ListenAndServe(); err != nil {
-				slog.Error("Could not start HTTP server", "error", err)
+			if serveErr := httpServer.ListenAndServe(); serveErr != nil {
+				slog.Error("Could not start HTTP server", "error", serveErr)
 				os.Exit(1)
 			}
 		}
 	}()
 
-	// create channel listening for signals so we can have graceful shutdowns
+	gracefulShutdown(httpServer)
+}
+
+func gracefulShutdown(srv *http.Server) {
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 	<-signalChan
 
 	slog.Info("Shutdown signal received, exiting")
-	// close the HTTP server
-	httpServer.Shutdown(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), httpServerTimeout)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		slog.Error("Error shutting down HTTP server", "error", err)
+	}
 }
