@@ -29,11 +29,17 @@ run = "go test -count=1 -race ./..."
 
 [tasks.build]
 description = "Build binary and container image (snapshot)"
-run = "scripts/build.sh"
+run = """
+goreleaser check
+goreleaser release --debug --snapshot --clean
+"""
 
 [tasks.release]
 description = "Build and publish release"
-run = "scripts/release.sh"
+run = """
+goreleaser check
+goreleaser release --debug --clean
+"""
 
 [tasks."license-check"]
 description = "Check license headers"
@@ -57,8 +63,11 @@ addlicense -c "SIGHUP s.r.l" -y 2017-present -v -l apache \
 
 [tasks."dev-up"]
 description = "Start local dev environment (Kind + Tilt)"
-run = "scripts/dev-up.sh"
+run = """
+ctlptl apply -f configs/cluster.yaml
+tilt up
+"""
 
 [tasks."dev-down"]
 description = "Tear down local dev environment"
-run = "scripts/dev-down.sh"
+run = "ctlptl delete --cascade true -f configs/cluster.yaml"
