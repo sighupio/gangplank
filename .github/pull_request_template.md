@@ -61,6 +61,12 @@ Example:
 - [ ] Local Verification: Validated functionality within the local development environment.
 -->
 
+### Code quality 🧾
+
+- [ ] Executed tests with `mise run test`
+- [ ] Checked lint with `mise run lint`
+- [ ] Checked license with `mise run license-check`
+
 ### Future work 🔧
 
 <!--
