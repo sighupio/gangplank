@@ -62,8 +62,7 @@ func (s *CustomCookieStore) Get(r *http.Request, name string) (*sessions.Session
 // The original cookie is split/joined in its encoded form.
 func (s *CustomCookieStore) New(r *http.Request, name string) (*sessions.Session, error) {
 	session := sessions.NewSession(s, name)
-	opts := *s.Options
-	session.Options = &opts
+	session.Options = new(*s.Options)
 	session.IsNew = true
 	cookie := joinSectionCookies(r, name)
 	var err error
