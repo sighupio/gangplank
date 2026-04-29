@@ -48,6 +48,7 @@ addlicense -c "SIGHUP s.r.l" -y 2017-present -v -l apache \
   -ignore "deployments/helm/templates/**/*" \
   -ignore "dist/**/*" \
   -ignore ".go/**/*" \
+  -ignore ".idea/**/*" \
   --check .
 """
 
