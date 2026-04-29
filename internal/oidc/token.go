@@ -21,29 +21,32 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// OAuth2Token is an interface which is used when exchanging an id_token for an access token
+// OAuth2Token is an interface used when exchanging an id_token for an access token.
 type OAuth2Token interface {
 	Exchange(ctx context.Context, code string) (*oauth2.Token, error)
 }
 
-// Token is an implementation of OAuth2Token Interface
+// Token is an implementation of OAuth2Token Interface.
 type Token struct {
 	OAuth2Cfg *oauth2.Config
 }
 
-// ParseToken returns a jwt token from an idToken, returns error if it cannot parse
+// ParseToken returns a jwt token from an idToken, returns an error if it cannot parse.
 func ParseToken(idToken, clientSecret string) (*jwt.Token, error) {
-	token, _ := jwt.Parse(idToken, func(token *jwt.Token) (any, error) {
+	token, err := jwt.Parse(idToken, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return []byte(clientSecret), nil
 	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse token: %w", err)
+	}
 
 	return token, nil
 }
 
-// Exchange takes an oauth2 auth token and exchanges for an id_token
+// Exchange takes an oauth2 auth token and exchanges for an id_token.
 func (t *Token) Exchange(ctx context.Context, code string) (*oauth2.Token, error) {
 	return t.OAuth2Cfg.Exchange(ctx, code)
 }

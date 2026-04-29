@@ -29,44 +29,52 @@ import (
 	"golang.org/x/oauth2"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api/v1"
 
-	"github.com/gorilla/sessions"
 	"sigs.k8s.io/yaml"
 
 	"github.com/sighupio/gangplank/internal/config"
 	"github.com/sighupio/gangplank/internal/session"
 )
 
-func testInit() {
-	var err error
-	gangplankUserSession, err = session.New("test", false)
-	if err != nil {
-		panic(err)
-	}
-	transportConfig = config.NewTransportConfig("")
+const (
+	testClientSecret = "qwertyuiopasdfghjklzxcvbnm123456"
+	testIDToken      = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJHYW5nd2F5VGVzdCIsImlhdCI6MTU0MDA0NjM0NywiZXhwIjoxODg3MjAxNTQ3LCJhdWQiOiJnYW5nd2F5LmhlcHRpby5jb20iLCJzdWIiOiJnYW5nd2F5QGhlcHRpby5jb20iLCJHaXZlbk5hbWUiOiJHYW5nIiwiU3VybmFtZSI6IldheSIsIkVtYWlsIjoiZ2FuZ3dheUBoZXB0aW8uY29tIiwiR3JvdXBzIjoiZGV2LGFkbWluIn0.zNG4Dnxr76J0p4phfsAUYWunioct0krkMiunMynlQsU"
+)
 
-	oauth2Cfg = &oauth2.Config{
+func newTestServer(t *testing.T) *server {
+	t.Helper()
+
+	userSession, err := session.New("test", false)
+	if err != nil {
+		t.Fatalf("failed to create session: %v", err)
+	}
+
+	oauth2Cfg := &oauth2.Config{
 		ClientID:     "cfg.ClientID",
-		ClientSecret: "qwertyuiopasdfghjklzxcvbnm123456",
+		ClientSecret: testClientSecret,
 		RedirectURL:  "cfg.RedirectURL",
 	}
 
-	o2token = &FakeToken{
-		OAuth2Cfg: oauth2Cfg,
+	return &server{
+		gangplankUserSession: userSession,
+		transportConfig:      config.NewTransportConfig(""),
+		oauth2Cfg:            oauth2Cfg,
+		o2token:              &FakeToken{OAuth2Cfg: oauth2Cfg},
 	}
 }
 
 func TestHomeHandler(t *testing.T) {
-	req, err := http.NewRequest("GET", "/", nil)
+	req, err := http.NewRequest(http.MethodGet, "/", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cfg = &config.Config{
+	ts := newTestServer(t)
+	ts.cfg = &config.Config{
 		HTTPPath: "",
 	}
 
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(homeHandler)
+	handler := http.HandlerFunc(ts.homeHandler)
 
 	handler.ServeHTTP(rr, req)
 	if status := rr.Code; status != http.StatusOK {
@@ -91,25 +99,20 @@ func TestCallbackHandler(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			var req *http.Request
-			var rsp *httptest.ResponseRecorder
-			var session *sessions.Session
-			var err error
-
-			cfg = &config.Config{
+			ts := newTestServer(t)
+			ts.cfg = &config.Config{
 				HTTPPath: "/foo",
 			}
 
-			// Init variables
-			rsp = NewRecorder()
-			testInit()
-			req, err = http.NewRequest("GET", "/callback", nil)
+			rsp := NewRecorder()
+			req, err := http.NewRequest(http.MethodGet, "/callback", nil)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			// Create request
-			if session, err = gangplankUserSession.Session.Get(req, "gangplank"); err != nil {
+			session, err := ts.gangplankUserSession.Session.Get(req, "gangplank")
+			if err != nil {
 				t.Fatalf("Error getting session: %v", err)
 			}
 
@@ -126,7 +129,7 @@ func TestCallbackHandler(t *testing.T) {
 			}
 			req.URL.RawQuery = q.Encode()
 
-			handler := http.HandlerFunc(callbackHandler)
+			handler := http.HandlerFunc(ts.callbackHandler)
 
 			// Call Handler
 			handler.ServeHTTP(rsp, req)
@@ -135,10 +138,8 @@ func TestCallbackHandler(t *testing.T) {
 			if status := rsp.Code; status != tc.expectedStatusCode {
 				t.Errorf("handler returned wrong status code: got %v want %v", status, tc.expectedStatusCode)
 			}
-
 		})
 	}
-
 }
 func TestCommandLineHandler(t *testing.T) {
 	tests := map[string]struct {
@@ -151,7 +152,7 @@ func TestCommandLineHandler(t *testing.T) {
 		"default": {
 			params: map[string]string{
 				"state":         "Uv38ByGCZU8WP18PmmIdcpVmx00QA3xNe7sEB9Hixkk=",
-				"id_token":      "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJHYW5nd2F5VGVzdCIsImlhdCI6MTU0MDA0NjM0NywiZXhwIjoxODg3MjAxNTQ3LCJhdWQiOiJnYW5nd2F5LmhlcHRpby5jb20iLCJzdWIiOiJnYW5nd2F5QGhlcHRpby5jb20iLCJHaXZlbk5hbWUiOiJHYW5nIiwiU3VybmFtZSI6IldheSIsIkVtYWlsIjoiZ2FuZ3dheUBoZXB0aW8uY29tIiwiR3JvdXBzIjoiZGV2LGFkbWluIn0.zNG4Dnxr76J0p4phfsAUYWunioct0krkMiunMynlQsU",
+				"id_token":      testIDToken,
 				"refresh_token": "bar",
 				"code":          "0cj0VQzNl36e4P2L&state=jdep4ov52FeUuzWLDDtSXaF4b5%2F%2FCUJ52xlE69ehnQ8%3D",
 			},
@@ -163,7 +164,7 @@ func TestCommandLineHandler(t *testing.T) {
 		"incorrect username claim": {
 			params: map[string]string{
 				"state":         "Uv38ByGCZU8WP18PmmIdcpVmx00QA3xNe7sEB9Hixkk=",
-				"id_token":      "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJHYW5nd2F5VGVzdCIsImlhdCI6MTU0MDA0NjM0NywiZXhwIjoxODg3MjAxNTQ3LCJhdWQiOiJnYW5nd2F5LmhlcHRpby5jb20iLCJzdWIiOiJnYW5nd2F5QGhlcHRpby5jb20iLCJHaXZlbk5hbWUiOiJHYW5nIiwiU3VybmFtZSI6IldheSIsIkVtYWlsIjoiZ2FuZ3dheUBoZXB0aW8uY29tIiwiR3JvdXBzIjoiZGV2LGFkbWluIn0.zNG4Dnxr76J0p4phfsAUYWunioct0krkMiunMynlQsU",
+				"id_token":      testIDToken,
 				"refresh_token": "bar",
 				"code":          "0cj0VQzNl36e4P2L&state=jdep4ov52FeUuzWLDDtSXaF4b5%2F%2FCUJ52xlE69ehnQ8%3D",
 			},
@@ -174,7 +175,7 @@ func TestCommandLineHandler(t *testing.T) {
 		"no email claim": {
 			params: map[string]string{
 				"state":         "Uv38ByGCZU8WP18PmmIdcpVmx00QA3xNe7sEB9Hixkk=",
-				"id_token":      "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJHYW5nd2F5VGVzdCIsImlhdCI6MTU0MDA0NjM0NywiZXhwIjoxODg3MjAxNTQ3LCJhdWQiOiJnYW5nd2F5LmhlcHRpby5jb20iLCJzdWIiOiJnYW5nd2F5QGhlcHRpby5jb20iLCJHaXZlbk5hbWUiOiJHYW5nIiwiU3VybmFtZSI6IldheSIsIkVtYWlsIjoiZ2FuZ3dheUBoZXB0aW8uY29tIiwiR3JvdXBzIjoiZGV2LGFkbWluIn0.zNG4Dnxr76J0p4phfsAUYWunioct0krkMiunMynlQsU",
+				"id_token":      testIDToken,
 				"refresh_token": "bar",
 				"code":          "0cj0VQzNl36e4P2L&state=jdep4ov52FeUuzWLDDtSXaF4b5%2F%2FCUJ52xlE69ehnQ8%3D",
 			},
@@ -186,37 +187,33 @@ func TestCommandLineHandler(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			var req *http.Request
-			var rsp *httptest.ResponseRecorder
-			var session *sessions.Session
-			var sessionIDToken *sessions.Session
-			var sessionRefreshToken *sessions.Session
-			var err error
-
-			cfg = &config.Config{
+			ts := newTestServer(t)
+			ts.cfg = &config.Config{
 				HTTPPath:      "/foo",
 				EmailClaim:    tc.emailClaim,
 				UsernameClaim: tc.usernameClaim,
 				ClusterName:   "cluster1",
 				APIServerURL:  "https://kubernetes",
+				ClientSecret:  testClientSecret,
 			}
 
-			// Init variables
-			rsp = NewRecorder()
-			testInit()
-			req, err = http.NewRequest("GET", "/callback", nil)
+			rsp := NewRecorder()
+			req, err := http.NewRequest(http.MethodGet, "/callback", nil)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			// Create request
-			if session, err = gangplankUserSession.Session.Get(req, "gangplank"); err != nil {
+			session, err := ts.gangplankUserSession.Session.Get(req, "gangplank")
+			if err != nil {
 				t.Fatalf("Error getting session: %v", err)
 			}
-			if sessionIDToken, err = gangplankUserSession.Session.Get(req, "gangplank_id_token"); err != nil {
+			sessionIDToken, err := ts.gangplankUserSession.Session.Get(req, "gangplank_id_token")
+			if err != nil {
 				t.Fatalf("Error getting session: %v", err)
 			}
-			if sessionRefreshToken, err = gangplankUserSession.Session.Get(req, "gangplank_refresh_token"); err != nil {
+			sessionRefreshToken, err := ts.gangplankUserSession.Session.Get(req, "gangplank_refresh_token")
+			if err != nil {
 				t.Fatalf("Error getting session: %v", err)
 			}
 
@@ -241,7 +238,7 @@ func TestCommandLineHandler(t *testing.T) {
 			}
 			req.URL.RawQuery = q.Encode()
 
-			handler := http.HandlerFunc(commandlineHandler)
+			handler := http.HandlerFunc(ts.commandlineHandler)
 
 			// Call Handler
 			handler.ServeHTTP(rsp, req)
@@ -280,10 +277,10 @@ func TestKubeconfigHandler(t *testing.T) {
 				ClusterName:   "cluster1",
 				APIServerURL:  "https://kubernetes",
 				ClientID:      "someClientID",
-				ClientSecret:  "someClientSecret",
+				ClientSecret:  testClientSecret,
 			},
 			params: map[string]string{
-				"id_token":      "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJHYW5nd2F5VGVzdCIsImlhdCI6MTU0MDA0NjM0NywiZXhwIjoxODg3MjAxNTQ3LCJhdWQiOiJnYW5nd2F5LmhlcHRpby5jb20iLCJzdWIiOiJnYW5nd2F5QGhlcHRpby5jb20iLCJHaXZlbk5hbWUiOiJHYW5nIiwiU3VybmFtZSI6IldheSIsIkVtYWlsIjoiZ2FuZ3dheUBoZXB0aW8uY29tIiwiR3JvdXBzIjoiZGV2LGFkbWluIn0.zNG4Dnxr76J0p4phfsAUYWunioct0krkMiunMynlQsU",
+				"id_token":      testIDToken,
 				"refresh_token": "bar",
 			},
 			expectedStatusCode:   http.StatusOK,
@@ -291,8 +288,8 @@ func TestKubeconfigHandler(t *testing.T) {
 			expectedAuthInfoName: "gangway@heptio.com@cluster1",
 			expectedAuthInfoAuthProviderConfig: map[string]string{
 				"client-id":                      "someClientID",
-				"client-secret":                  "someClientSecret",
-				"id-token":                       "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJHYW5nd2F5VGVzdCIsImlhdCI6MTU0MDA0NjM0NywiZXhwIjoxODg3MjAxNTQ3LCJhdWQiOiJnYW5nd2F5LmhlcHRpby5jb20iLCJzdWIiOiJnYW5nd2F5QGhlcHRpby5jb20iLCJHaXZlbk5hbWUiOiJHYW5nIiwiU3VybmFtZSI6IldheSIsIkVtYWlsIjoiZ2FuZ3dheUBoZXB0aW8uY29tIiwiR3JvdXBzIjoiZGV2LGFkbWluIn0.zNG4Dnxr76J0p4phfsAUYWunioct0krkMiunMynlQsU",
+				"client-secret":                  testClientSecret,
+				"id-token":                       testIDToken,
 				"refresh-token":                  "bar",
 				"idp-issuer-url":                 "GangwayTest",
 				"idp-certificate-authority-data": "ZHVtbXkgY2x1c3RlciBJRFAgQ0E=",
@@ -305,10 +302,10 @@ func TestKubeconfigHandler(t *testing.T) {
 				ClusterName:   "cluster1",
 				APIServerURL:  "https://kubernetes",
 				ClientID:      "someClientID",
-				ClientSecret:  "someClientSecret",
+				ClientSecret:  testClientSecret,
 			},
 			params: map[string]string{
-				"id_token":      "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJHYW5nd2F5VGVzdCIsImlhdCI6MTU0MDA0NjM0NywiZXhwIjoxODg3MjAxNTQ3LCJhdWQiOiJnYW5nd2F5LmhlcHRpby5jb20iLCJzdWIiOiJnYW5nd2F5QGhlcHRpby5jb20iLCJHaXZlbk5hbWUiOiJHYW5nIiwiU3VybmFtZSI6IldheSIsIkVtYWlsIjoiZ2FuZ3dheUBoZXB0aW8uY29tIiwiR3JvdXBzIjoiZGV2LGFkbWluIn0.zNG4Dnxr76J0p4phfsAUYWunioct0krkMiunMynlQsU",
+				"id_token":      testIDToken,
 				"refresh_token": "bar",
 				"filename":      "my-custom-cluster",
 			},
@@ -317,8 +314,8 @@ func TestKubeconfigHandler(t *testing.T) {
 			expectedAuthInfoName: "gangway@heptio.com@cluster1",
 			expectedAuthInfoAuthProviderConfig: map[string]string{
 				"client-id":                      "someClientID",
-				"client-secret":                  "someClientSecret",
-				"id-token":                       "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJHYW5nd2F5VGVzdCIsImlhdCI6MTU0MDA0NjM0NywiZXhwIjoxODg3MjAxNTQ3LCJhdWQiOiJnYW5nd2F5LmhlcHRpby5jb20iLCJzdWIiOiJnYW5nd2F5QGhlcHRpby5jb20iLCJHaXZlbk5hbWUiOiJHYW5nIiwiU3VybmFtZSI6IldheSIsIkVtYWlsIjoiZ2FuZ3dheUBoZXB0aW8uY29tIiwiR3JvdXBzIjoiZGV2LGFkbWluIn0.zNG4Dnxr76J0p4phfsAUYWunioct0krkMiunMynlQsU",
+				"client-secret":                  testClientSecret,
+				"id-token":                       testIDToken,
 				"refresh-token":                  "bar",
 				"idp-issuer-url":                 "GangwayTest",
 				"idp-certificate-authority-data": "ZHVtbXkgY2x1c3RlciBJRFAgQ0E=",
@@ -329,16 +326,12 @@ func TestKubeconfigHandler(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			var req *http.Request
-			var rsp *httptest.ResponseRecorder
-			var session *sessions.Session
-			var sessionIDToken *sessions.Session
-			var sessionRefreshToken *sessions.Session
-			var err error
+			ts := newTestServer(t)
+			ts.cfg = &tc.cfg
 
 			// Create dummy cluster CA file
 			clusterCAData := "dummy cluster CA"
-			f, err := os.CreateTemp("", "gangplank-kubeconfig-handler-test")
+			f, err := os.CreateTemp(t.TempDir(), "gangplank-kubeconfig-handler-test")
 			if err != nil {
 				t.Fatalf("Error creating temp file: %v", err)
 			}
@@ -346,33 +339,32 @@ func TestKubeconfigHandler(t *testing.T) {
 
 			// Create dummy cluster IDP CA file
 			idpCAData := "dummy cluster IDP CA"
-			fIdp, err := os.CreateTemp("", "gangplank-kubeconfig-handler-test-idp")
+			fIdp, err := os.CreateTemp(t.TempDir(), "gangplank-kubeconfig-handler-test-idp")
 			if err != nil {
 				t.Fatalf("Error creating temp file: %v", err)
 			}
 			fmt.Fprint(fIdp, idpCAData)
 
-			// Set config global var
-			cfg = &tc.cfg
-			cfg.ClusterCAPath = f.Name()
-			cfg.IDPCAPath = fIdp.Name()
+			ts.cfg.ClusterCAPath = f.Name()
+			ts.cfg.IDPCAPath = fIdp.Name()
 
-			// Init variables
-			rsp = NewRecorder()
-			testInit()
-			req, err = http.NewRequest("GET", "/kubeconf", nil)
+			rsp := NewRecorder()
+			req, err := http.NewRequest(http.MethodGet, "/kubeconf", nil)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			// Create request
-			if session, err = gangplankUserSession.Session.Get(req, "gangplank"); err != nil {
+			session, err := ts.gangplankUserSession.Session.Get(req, "gangplank")
+			if err != nil {
 				t.Fatalf("Error getting session: %v", err)
 			}
-			if sessionIDToken, err = gangplankUserSession.Session.Get(req, "gangplank_id_token"); err != nil {
+			sessionIDToken, err := ts.gangplankUserSession.Session.Get(req, "gangplank_id_token")
+			if err != nil {
 				t.Fatalf("Error getting session: %v", err)
 			}
-			if sessionRefreshToken, err = gangplankUserSession.Session.Get(req, "gangplank_refresh_token"); err != nil {
+			sessionRefreshToken, err := ts.gangplankUserSession.Session.Get(req, "gangplank_refresh_token")
+			if err != nil {
 				t.Fatalf("Error getting session: %v", err)
 			}
 
@@ -395,7 +387,7 @@ func TestKubeconfigHandler(t *testing.T) {
 			}
 			req.URL.RawQuery = q.Encode()
 
-			handler := http.HandlerFunc(kubeConfigHandler)
+			handler := http.HandlerFunc(ts.kubeConfigHandler)
 
 			// Call Handler
 			handler.ServeHTTP(rsp, req)
@@ -415,74 +407,94 @@ func TestKubeconfigHandler(t *testing.T) {
 				t.Errorf("Content-Type = %q; want %q", gotCT, "application/yaml")
 			}
 
-			// if response code is OK, validate the kubeconfig
-			if rsp.Code == 200 {
-				bodyBytes, err := io.ReadAll(rsp.Body)
-				if err != nil {
-					t.Fatalf("error reading body: %v", err)
-				}
-				kubeconfig := &clientcmdapi.Config{}
-				if err := yaml.Unmarshal(bodyBytes, kubeconfig); err != nil {
-					t.Fatalf("error unmarshaling response: %v", err)
-				}
-
-				// Validate cluster
-				if len(kubeconfig.Clusters) != 1 {
-					t.Fatalf("Found %d clusters in the generated kubeconfig, expected 1", len(kubeconfig.Clusters))
-				}
-				cluster := kubeconfig.Clusters[0]
-				if cluster.Name != cfg.ClusterName {
-					t.Errorf("Expected cluster name to be %q, but found %q", cfg.ClusterName, kubeconfig.Clusters[0].Name)
-				}
-				if cluster.Cluster.Server != cfg.APIServerURL {
-					t.Errorf("Expected cluster server to be %q, but found %q", cfg.APIServerURL, cluster.Cluster.Server)
-				}
-				if string(cluster.Cluster.CertificateAuthorityData) != clusterCAData {
-					t.Errorf("Expected cluster CA Data %q, but got %q", clusterCAData, string(cluster.Cluster.CertificateAuthorityData))
-				}
-
-				// Validate AuthInfo
-				if len(kubeconfig.AuthInfos) != 1 {
-					t.Fatalf("Found %d users in the generated kubeconfig, expected 1", len(kubeconfig.AuthInfos))
-				}
-				authInfo := kubeconfig.AuthInfos[0]
-				if authInfo.Name != tc.expectedAuthInfoName {
-					t.Errorf("Expected AuthInfo.Name %q, but got %q", tc.expectedAuthInfoName, authInfo.Name)
-				}
-
-				if authInfo.AuthInfo.AuthProvider.Name != "oidc" {
-					t.Errorf("expecetd authprovider to be oidc, got %s", authInfo.AuthInfo.AuthProvider.Name)
-				}
-				if !reflect.DeepEqual(authInfo.AuthInfo.AuthProvider.Config, tc.expectedAuthInfoAuthProviderConfig) {
-					t.Errorf("Expected %v, got %v", tc.expectedAuthInfoAuthProviderConfig, authInfo.AuthInfo.AuthProvider.Config)
-				}
-
-				// Validate context
-				if len(kubeconfig.Contexts) != 1 {
-					t.Fatalf("Found %d contexts in the generated kubeconfig, expected 1", len(kubeconfig.Contexts))
-				}
-				context := kubeconfig.Contexts[0]
-				if context.Name != cfg.ClusterName {
-					t.Errorf("Expected context name to be %q, but found %q", cfg.ClusterName, context.Name)
-				}
-				if context.Context.Cluster != cluster.Name {
-					t.Errorf("Cluster name %q in context does not match cluster name %q", context.Context.Cluster, cluster.Name)
-				}
-				if context.Context.AuthInfo != authInfo.Name {
-					t.Errorf("AuthInfo name %q in context does not match user name %q", context.Context.AuthInfo, authInfo.Name)
-				}
-				if kubeconfig.CurrentContext != context.Name {
-					t.Errorf("Current context %q does not match context name %q", kubeconfig.CurrentContext, context.Name)
-				}
+			if rsp.Code != 200 {
+				t.Fatalf("expected status 200, got %d", rsp.Code)
 			}
+
+			validateKubeconfig(
+				t, rsp, ts.cfg, clusterCAData,
+				tc.expectedAuthInfoName, tc.expectedAuthInfoAuthProviderConfig,
+			)
 		})
 	}
 }
 
-func TestUnauthedCommandlineHandlerRedirect(t *testing.T) {
-	testInit()
+func validateKubeconfig(
+	t *testing.T,
+	rsp *httptest.ResponseRecorder,
+	cfg *config.Config,
+	clusterCAData string,
+	expectedAuthInfoName string,
+	expectedAuthProviderConfig map[string]string,
+) {
+	t.Helper()
 
-	req, err := http.NewRequest("GET", "/commandline", nil)
+	bodyBytes, readErr := io.ReadAll(rsp.Body)
+	if readErr != nil {
+		t.Fatalf("error reading body: %v", readErr)
+	}
+	kubeconfig := &clientcmdapi.Config{}
+	if unmarshalErr := yaml.Unmarshal(bodyBytes, kubeconfig); unmarshalErr != nil {
+		t.Fatalf("error unmarshaling response: %v", unmarshalErr)
+	}
+
+	// Validate cluster
+	if len(kubeconfig.Clusters) != 1 {
+		t.Fatalf("Found %d clusters in the generated kubeconfig, expected 1", len(kubeconfig.Clusters))
+	}
+	cluster := kubeconfig.Clusters[0]
+	if cluster.Name != cfg.ClusterName {
+		t.Errorf("Expected cluster name to be %q, but found %q", cfg.ClusterName, cluster.Name)
+	}
+	if cluster.Cluster.Server != cfg.APIServerURL {
+		t.Errorf("Expected cluster server to be %q, but found %q", cfg.APIServerURL, cluster.Cluster.Server)
+	}
+	if string(cluster.Cluster.CertificateAuthorityData) != clusterCAData {
+		t.Errorf(
+			"Expected cluster CA Data %q, but got %q",
+			clusterCAData, string(cluster.Cluster.CertificateAuthorityData),
+		)
+	}
+
+	// Validate AuthInfo
+	if len(kubeconfig.AuthInfos) != 1 {
+		t.Fatalf("Found %d users in the generated kubeconfig, expected 1", len(kubeconfig.AuthInfos))
+	}
+	authInfo := kubeconfig.AuthInfos[0]
+	if authInfo.Name != expectedAuthInfoName {
+		t.Errorf("Expected AuthInfo.Name %q, but got %q", expectedAuthInfoName, authInfo.Name)
+	}
+	if authInfo.AuthInfo.AuthProvider.Name != "oidc" {
+		t.Errorf("expected authprovider to be oidc, got %s", authInfo.AuthInfo.AuthProvider.Name)
+	}
+	if !reflect.DeepEqual(authInfo.AuthInfo.AuthProvider.Config, expectedAuthProviderConfig) {
+		t.Errorf("Expected %v, got %v", expectedAuthProviderConfig, authInfo.AuthInfo.AuthProvider.Config)
+	}
+
+	// Validate context
+	if len(kubeconfig.Contexts) != 1 {
+		t.Fatalf("Found %d contexts in the generated kubeconfig, expected 1", len(kubeconfig.Contexts))
+	}
+	ctx := kubeconfig.Contexts[0]
+	if ctx.Name != cfg.ClusterName {
+		t.Errorf("Expected context name to be %q, but found %q", cfg.ClusterName, ctx.Name)
+	}
+	if ctx.Context.Cluster != cluster.Name {
+		t.Errorf("Cluster name %q in context does not match cluster name %q", ctx.Context.Cluster, cluster.Name)
+	}
+	if ctx.Context.AuthInfo != authInfo.Name {
+		t.Errorf("AuthInfo name %q in context does not match user name %q", ctx.Context.AuthInfo, authInfo.Name)
+	}
+	if kubeconfig.CurrentContext != ctx.Name {
+		t.Errorf("Current context %q does not match context name %q", kubeconfig.CurrentContext, ctx.Name)
+	}
+}
+
+func TestUnauthedCommandlineHandlerRedirect(t *testing.T) {
+	ts := newTestServer(t)
+	ts.cfg = &config.Config{}
+
+	req, err := http.NewRequest(http.MethodGet, "/commandline", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -490,7 +502,7 @@ func TestUnauthedCommandlineHandlerRedirect(t *testing.T) {
 	session.New("test", false)
 
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(commandlineHandler)
+	handler := http.HandlerFunc(ts.commandlineHandler)
 
 	handler.ServeHTTP(rr, req)
 	if status := rr.Code; status != http.StatusTemporaryRedirect {
@@ -507,14 +519,59 @@ func NewRecorder() *httptest.ResponseRecorder {
 	}
 }
 
+func TestSanitizeFilename(t *testing.T) {
+	tests := map[string]struct {
+		input    string
+		expected string
+	}{
+		"clean": {
+			input:    "kubeconfig",
+			expected: "kubeconfig",
+		},
+		"with quotes": {
+			input:    `file"name`,
+			expected: "file_name",
+		},
+		"with backslash": {
+			input:    `file\name`,
+			expected: "file_name",
+		},
+		"with slash": {
+			input:    "file/name",
+			expected: "file_name",
+		},
+		"with newlines": {
+			input:    "file\r\nname",
+			expected: "file__name",
+		},
+		"header injection attempt": {
+			input:    "file\r\nX-Injected: true",
+			expected: "file__X-Injected: true",
+		},
+		"empty": {
+			input:    "",
+			expected: "",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := sanitizeFilename(tc.input)
+			if got != tc.expected {
+				t.Errorf("sanitizeFilename(%q) = %q, want %q", tc.input, got, tc.expected)
+			}
+		})
+	}
+}
+
 type FakeToken struct {
 	OAuth2Cfg *oauth2.Config
 }
 
-// Exchange takes an oauth2 auth token and exchanges for an id_token
-func (f *FakeToken) Exchange(ctx context.Context, code string) (*oauth2.Token, error) {
+// Exchange takes an oauth2 auth token and exchanges for an id_token.
+func (f *FakeToken) Exchange(_ context.Context, _ string) (*oauth2.Token, error) {
 	return &oauth2.Token{
-		AccessToken:  "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJHYW5nd2F5VGVzdCIsImlhdCI6MTU0MDA0NjM0NywiZXhwIjoxODg3MjAxNTQ3LCJhdWQiOiJnYW5nd2F5LmhlcHRpby5jb20iLCJzdWIiOiJnYW5nd2F5QGhlcHRpby5jb20iLCJHaXZlbk5hbWUiOiJHYW5nIiwiU3VybmFtZSI6IldheSIsIkVtYWlsIjoiZ2FuZ3dheUBoZXB0aW8uY29tIiwiR3JvdXBzIjoiZGV2LGFkbWluIn0.zNG4Dnxr76J0p4phfsAUYWunioct0krkMiunMynlQsU",
+		AccessToken:  testIDToken,
 		RefreshToken: "4567",
 	}, nil
 }

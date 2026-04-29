@@ -23,44 +23,45 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
-// Config the configuration field for gangplank
+const defaultPort = 8080
+
+// Config the configuration field for gangplank.
 type Config struct {
 	Host string `yaml:"host"`
 	Port int    `yaml:"port"`
 
-	ClusterName            string   `yaml:"clusterName" envconfig:"cluster_name"`
-	AuthorizeURL           string   `yaml:"authorizeURL" envconfig:"authorize_url"`
-	TokenURL               string   `yaml:"tokenURL" envconfig:"token_url"`
-	ClientID               string   `yaml:"clientID" envconfig:"client_id"`
-	ClientSecret           string   `yaml:"clientSecret" envconfig:"client_secret"`
+	ClusterName            string   `yaml:"clusterName"            envconfig:"cluster_name"`
+	AuthorizeURL           string   `yaml:"authorizeURL"           envconfig:"authorize_url"`
+	TokenURL               string   `yaml:"tokenURL"               envconfig:"token_url"`
+	ClientID               string   `yaml:"clientID"               envconfig:"client_id"`
+	ClientSecret           string   `yaml:"clientSecret"           envconfig:"client_secret"`
 	AllowEmptyClientSecret bool     `yaml:"allowEmptyClientSecret" envconfig:"allow_empty_client_secret"`
-	Audience               string   `yaml:"audience" envconfig:"audience"`
-	RedirectURL            string   `yaml:"redirectURL" envconfig:"redirect_url"`
-	Scopes                 []string `yaml:"scopes" envconfig:"scopes"`
-	UsernameClaim          string   `yaml:"usernameClaim" envconfig:"username_claim"`
-	EmailClaim             string   `yaml:"emailClaim" envconfig:"email_claim"`
-	ServeTLS               bool     `yaml:"serveTLS" envconfig:"serve_tls"`
-	CertFile               string   `yaml:"certFile" envconfig:"cert_file"`
-	KeyFile                string   `yaml:"keyFile" envconfig:"key_file"`
-	APIServerURL           string   `yaml:"apiServerURL" envconfig:"apiserver_url"`
-	ClusterCAPath          string   `yaml:"clusterCAPath" envconfig:"cluster_ca_path"`
-	IDPCAPath              string   `yaml:"idpCAPath" envconfig:"idp_ca_path"`
-	TrustedCAPath          string   `yaml:"trustedCAPath" envconfig:"trusted_ca_path"`
-	HTTPPath               string   `yaml:"httpPath" envconfig:"http_path"`
+	Audience               string   `yaml:"audience"               envconfig:"audience"`
+	RedirectURL            string   `yaml:"redirectURL"            envconfig:"redirect_url"`
+	Scopes                 []string `yaml:"scopes"                 envconfig:"scopes"`
+	UsernameClaim          string   `yaml:"usernameClaim"          envconfig:"username_claim"`
+	EmailClaim             string   `yaml:"emailClaim"             envconfig:"email_claim"`
+	ServeTLS               bool     `yaml:"serveTLS"               envconfig:"serve_tls"`
+	CertFile               string   `yaml:"certFile"               envconfig:"cert_file"`
+	KeyFile                string   `yaml:"keyFile"                envconfig:"key_file"`
+	APIServerURL           string   `yaml:"apiServerURL"           envconfig:"apiserver_url"`
+	ClusterCAPath          string   `yaml:"clusterCAPath"          envconfig:"cluster_ca_path"`
+	IDPCAPath              string   `yaml:"idpCAPath"              envconfig:"idp_ca_path"`
+	TrustedCAPath          string   `yaml:"trustedCAPath"          envconfig:"trusted_ca_path"`
+	HTTPPath               string   `yaml:"httpPath"               envconfig:"http_path"`
 
-	SessionSecurityKey     string `yaml:"sessionSecurityKey" envconfig:"SESSION_SECURITY_KEY"`
+	SessionSecurityKey     string `yaml:"sessionSecurityKey"     envconfig:"SESSION_SECURITY_KEY"`
 	CustomHTMLTemplatesDir string `yaml:"customHTMLTemplatesDir" envconfig:"custom_http_templates_dir"`
 
 	RemoveCAFromKubeconfig bool   `yaml:"removeCAFromKubeconfig" envconfig:"remove_ca_from_kubeconfig"`
-	Namespace              string `yaml:"namespace" envconfig:"namespace"`
+	Namespace              string `yaml:"namespace"              envconfig:"namespace"`
 }
 
-// NewConfig returns a Config struct from serialized config file
+// NewConfig returns a Config struct from serialized config file.
 func NewConfig(configFile string) (*Config, error) {
-
 	cfg := &Config{
 		Host:                   "0.0.0.0",
-		Port:                   8080,
+		Port:                   defaultPort,
 		AllowEmptyClientSecret: false,
 		Scopes:                 []string{"openid", "profile", "email", "offline_access"},
 		UsernameClaim:          "nickname",
@@ -102,7 +103,7 @@ func NewConfig(configFile string) (*Config, error) {
 	return cfg, nil
 }
 
-// Validate verifies all properties of config struct are intialized
+// Validate verifies all properties of the config struct are initialized.
 func (cfg *Config) Validate() error {
 	checks := []struct {
 		bad    bool
@@ -125,7 +126,7 @@ func (cfg *Config) Validate() error {
 	return nil
 }
 
-// GetRootPathPrefix returns '/' if no prefix is specified, otherwise returns the configured path
+// GetRootPathPrefix returns '/' if no prefix is specified, otherwise returns the configured path.
 func (cfg *Config) GetRootPathPrefix() string {
 	if len(cfg.HTTPPath) == 0 {
 		return "/"

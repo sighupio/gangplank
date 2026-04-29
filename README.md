@@ -41,7 +41,7 @@ instructions on how to configure `kubectl` to use the ID token.
 The following sequence diagram details the authentication flow:
 
 <p align="center">
-    <img src="docs/images/gangplank-sequence-diagram.png" width="600px" />
+    <img src="docs/images/gangplank-sequence-diagram.png" width="600px"  alt="gangplank-sequence-diagram"/>
 </p>
 
 ## Kubernetes API Server

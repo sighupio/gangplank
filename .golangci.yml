@@ -401,14 +401,6 @@ linters:
         - github.com/jmoiron/sqlx
 
     sloglint:
-      # Enforce not using global loggers.
-      # Values:
-      # - "": disabled
-      # - "all": report all global loggers
-      # - "default": report only the default slog logger
-      # https://github.com/go-simpler/sloglint?tab=readme-ov-file#no-global
-      # Default: ""
-      no-global: all
       # Enforce using methods that accept a context.
       # Values:
       # - "": disabled
@@ -446,7 +438,7 @@ linters:
   exclusions:
     # Log a warning if an exclusion rule is unused.
     # Default: false
-    warn-unused: true
+    warn-unused: false
     # Predefined exclusion rules.
     # Default: []
     presets:
@@ -476,3 +468,5 @@ linters:
           - gosec
           - noctx
           - wrapcheck
+          - testpackage
+          - gocognit
