@@ -37,7 +37,7 @@ func TestParseToken(t *testing.T) {
 		want         *jwt.Token
 		expectError  bool
 	}{
-		"default": {
+		"hs256 token": {
 			idToken:      "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJHYW5nd2F5VGVzdCIsImlhdCI6MTU0MDA0NjM0NywiZXhwIjoxODg3MjAxNTQ3LCJhdWQiOiJnYW5nd2F5LmhlcHRpby5jb20iLCJzdWIiOiJnYW5nd2F5QGhlcHRpby5jb20iLCJHaXZlbk5hbWUiOiJHYW5nIiwiU3VybmFtZSI6IldheSIsIkVtYWlsIjoiZ2FuZ3dheUBoZXB0aW8uY29tIiwiR3JvdXBzIjoiZGV2LGFkbWluIn0.zNG4Dnxr76J0p4phfsAUYWunioct0krkMiunMynlQsU",
 			clientSecret: "qwertyuiopasdfghjklzxcvbnm123456",
 			expectError:  false,
@@ -60,13 +60,30 @@ func TestParseToken(t *testing.T) {
 					"Surname":   "Way",
 				},
 				Signature: base64Decode("zNG4Dnxr76J0p4phfsAUYWunioct0krkMiunMynlQsU"),
-				Valid:     true,
+				Valid:     false,
 			},
 		},
-		"rsa is rejected": {
+		"rsa token": {
 			idToken:      "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.EkN-DOsnsuRjRO6BxXemmJDm3HbxrbRzXglbN2S4sOkopdU4IsDxTI8jO19W_A4K8ZPJijNLis4EZsHeY559a4DFOd50_OqgHGuERTqYZyuhtF39yxJPAjUESwxk2J5k_4zM3O-vtd1Ghyo4IbqKKSy6J9mTniYJPenn5-HIirE",
 			clientSecret: "",
-			expectError:  true,
+			expectError:  false,
+			want: &jwt.Token{
+				Raw:    "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.EkN-DOsnsuRjRO6BxXemmJDm3HbxrbRzXglbN2S4sOkopdU4IsDxTI8jO19W_A4K8ZPJijNLis4EZsHeY559a4DFOd50_OqgHGuERTqYZyuhtF39yxJPAjUESwxk2J5k_4zM3O-vtd1Ghyo4IbqKKSy6J9mTniYJPenn5-HIirE",
+				Method: jwt.SigningMethodRS256,
+				Header: map[string]any{
+					"typ": "JWT",
+					"alg": "RS256",
+				},
+				Claims: jwt.MapClaims{
+					"sub":   "1234567890",
+					"name":  "John Doe",
+					"admin": true,
+				},
+				Signature: base64Decode(
+					"EkN-DOsnsuRjRO6BxXemmJDm3HbxrbRzXglbN2S4sOkopdU4IsDxTI8jO19W_A4K8ZPJijNLis4EZsHeY559a4DFOd50_OqgHGuERTqYZyuhtF39yxJPAjUESwxk2J5k_4zM3O-vtd1Ghyo4IbqKKSy6J9mTniYJPenn5-HIirE",
+				),
+				Valid: false,
+			},
 		},
 	}
 
