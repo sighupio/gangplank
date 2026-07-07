@@ -21,7 +21,6 @@ import (
 	htmltemplate "html/template"
 	"log/slog"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -180,7 +179,7 @@ func (s *server) loginHandler(w http.ResponseWriter, r *http.Request) {
 	b := make([]byte, stateTokenBytes)
 	// From the rand.Read signature: It never returns an error, and always fills b entirely.
 	_, _ = rand.Read(b)
-	state := url.QueryEscape(base64.StdEncoding.EncodeToString(b))
+	state := base64.RawURLEncoding.EncodeToString(b)
 
 	session, err := s.gangplankUserSession.Session.Get(r, "gangplank")
 	if err != nil {
