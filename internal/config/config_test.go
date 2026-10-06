@@ -37,11 +37,29 @@ func TestEnvionmentOverrides(t *testing.T) {
 	t.Setenv("GANGPLANK_CONFIG_TOKEN_URL", "https://foo.bar/token")
 	t.Setenv("GANGPLANK_CONFIG_AUDIENCE", "foo")
 	t.Setenv("GANGPLANK_CONFIG_SCOPES", "groups,sub")
+	t.Setenv("GANGPLANK_CONFIG_CUSTOM_HTTP_TEMPLATES_DIR", "/custom-templates")
+	t.Setenv("GANGPLANK_CONFIG_CUSTOM_STATIC_DIR", "/custom-static")
 	t.Setenv("GANGPLANK_CONFIG_REMOVE_CA_FROM_KUBECONFIG", "true")
 	t.Setenv("GANGPLANK_CONFIG_NAMESPACE", "default")
 	cfg, err := NewConfig("")
 	if err != nil {
 		t.Errorf("Failed to test config overrides with error: %s", err)
+	}
+
+	if cfg.CustomHTMLTemplatesDir != "/custom-templates" {
+		t.Errorf(
+			"Failed to set CustomHTMLTemplatesDir via environment variable. Expected %s but got %s",
+			"/custom-templates",
+			cfg.CustomHTMLTemplatesDir,
+		)
+	}
+
+	if cfg.CustomStaticDir != "/custom-static" {
+		t.Errorf(
+			"Failed to set CustomStaticDir via environment variable. Expected %s but got %s",
+			"/custom-static",
+			cfg.CustomStaticDir,
+		)
 	}
 
 	if cfg.Port != 1234 {

@@ -31,7 +31,6 @@ import (
 	"github.com/sighupio/gangplank/internal/config"
 	"github.com/sighupio/gangplank/internal/oidc"
 	"github.com/sighupio/gangplank/internal/session"
-	"github.com/sighupio/gangplank/static"
 )
 
 const httpServerTimeout = 10 * time.Second
@@ -109,7 +108,7 @@ func main() {
 	http.HandleFunc(s.cfg.GetRootPathPrefix(), httpLogger(s.homeHandler))
 	http.HandleFunc(
 		fmt.Sprintf("%s/static/", s.cfg.HTTPPath),
-		httpLogger(http.StripPrefix(fmt.Sprintf("%s/static/", s.cfg.HTTPPath), http.FileServerFS(static.FS)).ServeHTTP),
+		httpLogger(http.StripPrefix(fmt.Sprintf("%s/static/", s.cfg.HTTPPath), s.staticHandler()).ServeHTTP),
 	)
 	http.HandleFunc(fmt.Sprintf("%s/login", s.cfg.HTTPPath), httpLogger(s.loginHandler))
 	http.HandleFunc(fmt.Sprintf("%s/callback", s.cfg.HTTPPath), httpLogger(s.callbackHandler))

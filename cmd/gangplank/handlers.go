@@ -32,6 +32,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/sighupio/gangplank/internal/oidc"
+	"github.com/sighupio/gangplank/static"
 	"github.com/sighupio/gangplank/templates"
 )
 
@@ -58,6 +59,14 @@ type userInfo struct {
 // homeInfo is used to store dynamic properties on.
 type homeInfo struct {
 	HTTPPath string
+}
+
+func (s *server) staticHandler() http.Handler {
+	if s.cfg.CustomStaticDir != "" {
+		return http.FileServerFS(os.DirFS(s.cfg.CustomStaticDir))
+	}
+
+	return http.FileServerFS(static.FS)
 }
 
 func (s *server) serveTemplate(tmplFile string, data any, w http.ResponseWriter) {

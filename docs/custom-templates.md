@@ -11,4 +11,9 @@ To enable this feature, set the `customHTMLTemplatesDir` option in Gangplank's c
 
 The templates are processed using Go's `html/template` [package][0].
 
+## Custom Static Assets
+
+To customize the static assets (such as CSS files) served by Gangplank, set the `customStaticDir` option in Gangplank's
+configuration file to a directory containing your custom static files (e.g. `style.css`).
+
 [0]: https://golang.org/pkg/html/template/

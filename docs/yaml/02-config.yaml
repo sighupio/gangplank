@@ -107,3 +107,7 @@ data:
     # The path to find custom HTML templates
     # Env var: GANGPLANK_CONFIG_CUSTOM_HTTP_TEMPLATES_DIR
     #customHTMLTemplatesDir: /custom-templates
+
+    # The path to find custom static assets
+    # Env var: GANGPLANK_CONFIG_CUSTOM_STATIC_DIR
+    #customStaticDir: /custom-static

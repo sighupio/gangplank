@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"strings"
@@ -81,6 +82,50 @@ func TestHomeHandler(t *testing.T) {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusOK)
 	}
+}
+
+func TestStaticHandler(t *testing.T) {
+	t.Run("default embedded static", func(t *testing.T) {
+		ts := newTestServer(t)
+		ts.cfg = &config.Config{}
+
+		req := httptest.NewRequest(http.MethodGet, "/style.css", nil)
+		rr := httptest.NewRecorder()
+
+		ts.staticHandler().ServeHTTP(rr, req)
+
+		if status := rr.Code; status != http.StatusOK {
+			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+		}
+		if !strings.Contains(rr.Body.String(), "euiHeader") {
+			t.Errorf("expected body to contain euiHeader style, got %s", rr.Body.String())
+		}
+	})
+
+	t.Run("custom static directory", func(t *testing.T) {
+		tempDir := t.TempDir()
+		customCSS := "/* custom stylesheet */ body { background-color: #000; }"
+		if err := os.WriteFile(filepath.Join(tempDir, "style.css"), []byte(customCSS), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		ts := newTestServer(t)
+		ts.cfg = &config.Config{
+			CustomStaticDir: tempDir,
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/style.css", nil)
+		rr := httptest.NewRecorder()
+
+		ts.staticHandler().ServeHTTP(rr, req)
+
+		if status := rr.Code; status != http.StatusOK {
+			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+		}
+		if rr.Body.String() != customCSS {
+			t.Errorf("expected body to be %q, got %q", customCSS, rr.Body.String())
+		}
+	})
 }
 
 func TestCallbackHandler(t *testing.T) {
