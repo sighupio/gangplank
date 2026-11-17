@@ -195,7 +195,7 @@ func (s *server) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	session, err := s.gangplankUserSession.Session.Get(r, "gangplank")
 	if err != nil {
-		slog.Error("Got an error in login", "error", err)
+		slog.ErrorContext(r.Context(), "Got an error in login", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -216,7 +216,7 @@ func (s *server) loginHandler(w http.ResponseWriter, r *http.Request) {
 func (s *server) cleanupAllSessions(w http.ResponseWriter, r *http.Request) {
 	err := s.gangplankUserSession.CleanupAll(w, r, "gangplank", "gangplank_id_token", "gangplank_refresh_token")
 	if err != nil {
-		slog.Error("Failed to cleanup sessions", "error", err)
+		slog.ErrorContext(r.Context(), "Failed to cleanup sessions", "error", err)
 	}
 }
 
@@ -307,7 +307,7 @@ func (s *server) kubeConfigHandler(w http.ResponseWriter, r *http.Request) {
 
 	d, err := yaml.Marshal(generateKubeConfig(info))
 	if err != nil {
-		slog.Error("Error creating kubeconfig", "error", err)
+		slog.ErrorContext(r.Context(), "Error creating kubeconfig", "error", err)
 		http.Error(w, "Error creating kubeconfig", http.StatusInternalServerError)
 		return
 	}
@@ -317,10 +317,9 @@ func (s *server) kubeConfigHandler(w http.ResponseWriter, r *http.Request) {
 	// tell the browser the returned content should be downloaded
 	w.Header().Set("Content-Type", "application/yaml")
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`Attachment; filename="%s"`, filename))
-	//nolint:gosec // content is yaml.Marshal output served as attachment, not rendered
 	if _, writeErr := w.Write(d); writeErr != nil {
 		// Headers already sent, so we can only log the error.
-		slog.Error("Failed to write kubeconfig response", "error", writeErr)
+		slog.ErrorContext(r.Context(), "Failed to write kubeconfig response", "error", writeErr)
 	}
 }
 
@@ -373,7 +372,8 @@ func (s *server) generateInfo(w http.ResponseWriter, r *http.Request) *userInfo 
 	kubeCfgUser := strings.Join([]string{username, s.cfg.ClusterName}, "@")
 
 	if s.cfg.EmailClaim != "" {
-		slog.Warn(
+		slog.WarnContext(
+			r.Context(),
 			"Using the Email Claim config setting is deprecated. Gangplank uses `UsernameClaim@ClusterName`. This field will be removed in a future version.",
 		)
 	}
@@ -385,7 +385,8 @@ func (s *server) generateInfo(w http.ResponseWriter, r *http.Request) *userInfo 
 	}
 
 	if s.cfg.ClientSecret == "" {
-		slog.Warn(
+		slog.WarnContext(
+			r.Context(),
 			"Setting an empty Client Secret should only be done if you have no other option and is an inherent security risk.",
 		)
 	}

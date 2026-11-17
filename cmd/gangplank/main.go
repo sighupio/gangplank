@@ -46,7 +46,7 @@ type server struct {
 // wrapper function for http logging.
 func httpLogger(fn http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		defer slog.Debug("HTTP log", "method", r.Method, "url", r.URL, "remote-addr", r.RemoteAddr)
+		defer slog.DebugContext(r.Context(), "HTTP log", "method", r.Method, "url", r.URL, "remote-addr", r.RemoteAddr)
 		fn(w, r)
 	}
 }

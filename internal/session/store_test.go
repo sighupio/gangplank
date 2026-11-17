@@ -90,19 +90,6 @@ func TestSplitCookieSize(t *testing.T) {
 	}
 }
 
-func assertCookieOptions(t *testing.T, s *CustomCookieStore, wantSecure bool, wantSameSite http.SameSite) {
-	t.Helper()
-	if s.Options == nil {
-		t.Fatal("Options is nil")
-	}
-	if s.Options.Secure != wantSecure {
-		t.Errorf("Secure = %v, want %v", s.Options.Secure, wantSecure)
-	}
-	if s.Options.SameSite != wantSameSite {
-		t.Errorf("SameSite = %v, want %v", s.Options.SameSite, wantSameSite)
-	}
-}
-
 func TestNewCustomCookieStoreOptionsHTTPS(t *testing.T) {
 	s, err := NewCustomCookieStore(true, []byte("test-signing-key-32bytes!!"), []byte("test-encryption-key"))
 	if err != nil {
@@ -130,6 +117,19 @@ func TestSplitAndJoin(t *testing.T) {
 	})
 	if value != originalValue {
 		t.Errorf("SplitAndJoin value incorrect: \n value: %s \n originalValue: %s", value, originalValue)
+	}
+}
+
+func assertCookieOptions(t *testing.T, s *CustomCookieStore, wantSecure bool, wantSameSite http.SameSite) {
+	t.Helper()
+	if s.Options == nil {
+		t.Fatal("Options is nil")
+	}
+	if s.Options.Secure != wantSecure {
+		t.Errorf("Secure = %v, want %v", s.Options.Secure, wantSecure)
+	}
+	if s.Options.SameSite != wantSameSite {
+		t.Errorf("SameSite = %v, want %v", s.Options.SameSite, wantSameSite)
 	}
 }
 

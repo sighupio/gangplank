@@ -40,28 +40,6 @@ const (
 	testIDToken      = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJHYW5nd2F5VGVzdCIsImlhdCI6MTU0MDA0NjM0NywiZXhwIjoxODg3MjAxNTQ3LCJhdWQiOiJnYW5nd2F5LmhlcHRpby5jb20iLCJzdWIiOiJnYW5nd2F5QGhlcHRpby5jb20iLCJHaXZlbk5hbWUiOiJHYW5nIiwiU3VybmFtZSI6IldheSIsIkVtYWlsIjoiZ2FuZ3dheUBoZXB0aW8uY29tIiwiR3JvdXBzIjoiZGV2LGFkbWluIn0.zNG4Dnxr76J0p4phfsAUYWunioct0krkMiunMynlQsU"
 )
 
-func newTestServer(t *testing.T) *server {
-	t.Helper()
-
-	userSession, err := session.New("test", false)
-	if err != nil {
-		t.Fatalf("failed to create session: %v", err)
-	}
-
-	oauth2Cfg := &oauth2.Config{
-		ClientID:     "cfg.ClientID",
-		ClientSecret: testClientSecret,
-		RedirectURL:  "cfg.RedirectURL",
-	}
-
-	return &server{
-		gangplankUserSession: userSession,
-		transportConfig:      config.NewTransportConfig(""),
-		oauth2Cfg:            oauth2Cfg,
-		o2token:              &FakeToken{OAuth2Cfg: oauth2Cfg},
-	}
-}
-
 func TestHomeHandler(t *testing.T) {
 	t.Run("default embedded template", func(t *testing.T) {
 		ts := newTestServer(t)
@@ -485,6 +463,94 @@ func TestKubeconfigHandler(t *testing.T) {
 	}
 }
 
+func TestUnauthedCommandlineHandlerRedirect(t *testing.T) {
+	ts := newTestServer(t)
+	ts.cfg = &config.Config{}
+
+	req, err := http.NewRequest(http.MethodGet, "/commandline", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	session.New("test", false)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(ts.commandlineHandler)
+
+	handler.ServeHTTP(rr, req)
+	if status := rr.Code; status != http.StatusTemporaryRedirect {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusOK)
+	}
+}
+
+func TestSanitizeFilename(t *testing.T) {
+	tests := map[string]struct {
+		input    string
+		expected string
+	}{
+		"clean": {
+			input:    "kubeconfig",
+			expected: "kubeconfig",
+		},
+		"with quotes": {
+			input:    `file"name`,
+			expected: "file_name",
+		},
+		"with backslash": {
+			input:    `file\name`,
+			expected: "file_name",
+		},
+		"with slash": {
+			input:    "file/name",
+			expected: "file_name",
+		},
+		"with newlines": {
+			input:    "file\r\nname",
+			expected: "file__name",
+		},
+		"header injection attempt": {
+			input:    "file\r\nX-Injected: true",
+			expected: "file__X-Injected: true",
+		},
+		"empty": {
+			input:    "",
+			expected: "",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := sanitizeFilename(tc.input)
+			if got != tc.expected {
+				t.Errorf("sanitizeFilename(%q) = %q, want %q", tc.input, got, tc.expected)
+			}
+		})
+	}
+}
+
+func newTestServer(t *testing.T) *server {
+	t.Helper()
+
+	userSession, err := session.New("test", false)
+	if err != nil {
+		t.Fatalf("failed to create session: %v", err)
+	}
+
+	oauth2Cfg := &oauth2.Config{
+		ClientID:     "cfg.ClientID",
+		ClientSecret: testClientSecret,
+		RedirectURL:  "cfg.RedirectURL",
+	}
+
+	return &server{
+		gangplankUserSession: userSession,
+		transportConfig:      config.NewTransportConfig(""),
+		oauth2Cfg:            oauth2Cfg,
+		o2token:              &FakeToken{OAuth2Cfg: oauth2Cfg},
+	}
+}
+
 func validateKubeconfig(
 	t *testing.T,
 	rsp *httptest.ResponseRecorder,
@@ -553,72 +619,6 @@ func validateKubeconfig(
 	}
 	if kubeconfig.CurrentContext != ctx.Name {
 		t.Errorf("Current context %q does not match context name %q", kubeconfig.CurrentContext, ctx.Name)
-	}
-}
-
-func TestUnauthedCommandlineHandlerRedirect(t *testing.T) {
-	ts := newTestServer(t)
-	ts.cfg = &config.Config{}
-
-	req, err := http.NewRequest(http.MethodGet, "/commandline", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	session.New("test", false)
-
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(ts.commandlineHandler)
-
-	handler.ServeHTTP(rr, req)
-	if status := rr.Code; status != http.StatusTemporaryRedirect {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusOK)
-	}
-}
-
-func TestSanitizeFilename(t *testing.T) {
-	tests := map[string]struct {
-		input    string
-		expected string
-	}{
-		"clean": {
-			input:    "kubeconfig",
-			expected: "kubeconfig",
-		},
-		"with quotes": {
-			input:    `file"name`,
-			expected: "file_name",
-		},
-		"with backslash": {
-			input:    `file\name`,
-			expected: "file_name",
-		},
-		"with slash": {
-			input:    "file/name",
-			expected: "file_name",
-		},
-		"with newlines": {
-			input:    "file\r\nname",
-			expected: "file__name",
-		},
-		"header injection attempt": {
-			input:    "file\r\nX-Injected: true",
-			expected: "file__X-Injected: true",
-		},
-		"empty": {
-			input:    "",
-			expected: "",
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := sanitizeFilename(tc.input)
-			if got != tc.expected {
-				t.Errorf("sanitizeFilename(%q) = %q, want %q", tc.input, got, tc.expected)
-			}
-		})
 	}
 }
 
