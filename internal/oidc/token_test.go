@@ -16,6 +16,7 @@ package oidc
 import (
 	"bytes"
 	"encoding/base64"
+	"maps"
 	"testing"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -123,24 +124,10 @@ func validateToken(t *testing.T, got, want *jwt.Token) {
 	if got.Method != want.Method {
 		t.Fatalf("Method: want: %v, got: %v", want, got)
 	}
-	if !eq(got.Header, want.Header) {
+	if !maps.Equal(got.Header, want.Header) {
 		t.Fatalf("Header: want: %v, got: %v", want, got)
 	}
-	if !eq(got.Claims.(jwt.MapClaims), want.Claims.(jwt.MapClaims)) {
+	if !maps.Equal(got.Claims.(jwt.MapClaims), want.Claims.(jwt.MapClaims)) {
 		t.Fatalf("Header: want: %v, got: %v", want, got)
 	}
-}
-
-func eq(a, b map[string]any) bool {
-	if len(a) != len(b) {
-		return false
-	}
-
-	for k, v := range a {
-		if w, ok := b[k]; !ok || v != w {
-			return false
-		}
-	}
-
-	return true
 }

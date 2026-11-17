@@ -164,9 +164,9 @@ func main() {
 }
 
 func gracefulShutdown(srv *http.Server) {
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
-	<-signalChan
+	signalCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+	<-signalCtx.Done()
 
 	slog.Info("Shutdown signal received, exiting")
 	ctx, cancel := context.WithTimeout(context.Background(), httpServerTimeout)

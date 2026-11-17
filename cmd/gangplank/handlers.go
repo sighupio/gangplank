@@ -14,6 +14,7 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"crypto/rand"
 	"encoding/base64"
@@ -311,11 +312,7 @@ func (s *server) kubeConfigHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filename := r.URL.Query().Get("filename")
-	if filename == "" {
-		filename = info.KubeCfgUser
-	}
-	filename = sanitizeFilename(filename)
+	filename := sanitizeFilename(cmp.Or(r.URL.Query().Get("filename"), info.KubeCfgUser))
 
 	// tell the browser the returned content should be downloaded
 	w.Header().Set("Content-Type", "application/yaml")
@@ -429,8 +426,7 @@ func (s *server) readCAFiles() ([]byte, []byte) {
 		if idpErr != nil {
 			slog.Error("Failed to open IDP file", "error", idpErr)
 		} else {
-			idpCAb64Bytes = make([]byte, base64.StdEncoding.EncodedLen(len(idpBytes)))
-			base64.StdEncoding.Encode(idpCAb64Bytes, idpBytes)
+			idpCAb64Bytes = base64.StdEncoding.AppendEncode(nil, idpBytes)
 		}
 	}
 

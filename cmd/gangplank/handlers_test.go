@@ -14,15 +14,14 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"reflect"
 	"regexp"
 	"strings"
 	"testing"
@@ -171,7 +170,7 @@ func TestCallbackHandler(t *testing.T) {
 				HTTPPath: "/foo",
 			}
 
-			rsp := NewRecorder()
+			rsp := httptest.NewRecorder()
 			req, err := http.NewRequest(http.MethodGet, "/callback", nil)
 			if err != nil {
 				t.Fatal(err)
@@ -264,7 +263,7 @@ func TestCommandLineHandler(t *testing.T) {
 				ClientSecret:  testClientSecret,
 			}
 
-			rsp := NewRecorder()
+			rsp := httptest.NewRecorder()
 			req, err := http.NewRequest(http.MethodGet, "/callback", nil)
 			if err != nil {
 				t.Fatal(err)
@@ -415,7 +414,7 @@ func TestKubeconfigHandler(t *testing.T) {
 			ts.cfg.ClusterCAPath = f.Name()
 			ts.cfg.IDPCAPath = fIdp.Name()
 
-			rsp := NewRecorder()
+			rsp := httptest.NewRecorder()
 			req, err := http.NewRequest(http.MethodGet, "/kubeconf", nil)
 			if err != nil {
 				t.Fatal(err)
@@ -534,7 +533,7 @@ func validateKubeconfig(
 	if authInfo.AuthInfo.AuthProvider.Name != "oidc" {
 		t.Errorf("expected authprovider to be oidc, got %s", authInfo.AuthInfo.AuthProvider.Name)
 	}
-	if !reflect.DeepEqual(authInfo.AuthInfo.AuthProvider.Config, expectedAuthProviderConfig) {
+	if !maps.Equal(authInfo.AuthInfo.AuthProvider.Config, expectedAuthProviderConfig) {
 		t.Errorf("Expected %v, got %v", expectedAuthProviderConfig, authInfo.AuthInfo.AuthProvider.Config)
 	}
 
@@ -575,14 +574,6 @@ func TestUnauthedCommandlineHandlerRedirect(t *testing.T) {
 	if status := rr.Code; status != http.StatusTemporaryRedirect {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusOK)
-	}
-}
-
-// NewRecorder returns an initialized ResponseRecorder.
-func NewRecorder() *httptest.ResponseRecorder {
-	return &httptest.ResponseRecorder{
-		HeaderMap: make(http.Header),
-		Body:      new(bytes.Buffer),
 	}
 }
 

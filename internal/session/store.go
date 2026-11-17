@@ -16,6 +16,7 @@ package session
 import (
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/gorilla/securecookie"
@@ -124,12 +125,8 @@ func joinSectionCookies(r *http.Request, name string) string {
 // fit within the 4kb cookie limit indexing the cookies from 0.
 func splitCookie(cookieValue string) []string {
 	var sectionCookies []string
-	valueBytes := []byte(cookieValue)
-
-	for len(valueBytes) > 0 {
-		length := min(len(valueBytes), maxCookieLength)
-		sectionCookies = append(sectionCookies, string(valueBytes[:length]))
-		valueBytes = valueBytes[length:]
+	for chunk := range slices.Chunk([]byte(cookieValue), maxCookieLength) {
+		sectionCookies = append(sectionCookies, string(chunk))
 	}
 	return sectionCookies
 }
