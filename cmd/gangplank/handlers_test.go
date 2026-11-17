@@ -14,15 +14,13 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"reflect"
 	"regexp"
 	"strings"
 	"testing"
@@ -41,30 +39,12 @@ const (
 	testIDToken      = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJHYW5nd2F5VGVzdCIsImlhdCI6MTU0MDA0NjM0NywiZXhwIjoxODg3MjAxNTQ3LCJhdWQiOiJnYW5nd2F5LmhlcHRpby5jb20iLCJzdWIiOiJnYW5nd2F5QGhlcHRpby5jb20iLCJHaXZlbk5hbWUiOiJHYW5nIiwiU3VybmFtZSI6IldheSIsIkVtYWlsIjoiZ2FuZ3dheUBoZXB0aW8uY29tIiwiR3JvdXBzIjoiZGV2LGFkbWluIn0.zNG4Dnxr76J0p4phfsAUYWunioct0krkMiunMynlQsU"
 )
 
-func newTestServer(t *testing.T) *server {
-	t.Helper()
-
-	userSession, err := session.New("test", false)
-	if err != nil {
-		t.Fatalf("failed to create session: %v", err)
-	}
-
-	oauth2Cfg := &oauth2.Config{
-		ClientID:     "cfg.ClientID",
-		ClientSecret: testClientSecret,
-		RedirectURL:  "cfg.RedirectURL",
-	}
-
-	return &server{
-		gangplankUserSession: userSession,
-		transportConfig:      config.NewTransportConfig(""),
-		oauth2Cfg:            oauth2Cfg,
-		o2token:              &FakeToken{OAuth2Cfg: oauth2Cfg},
-	}
-}
-
 func TestHomeHandler(t *testing.T) {
+	t.Parallel()
+
 	t.Run("default embedded template", func(t *testing.T) {
+		t.Parallel()
+
 		ts := newTestServer(t)
 		ts.cfg = &config.Config{}
 
@@ -79,6 +59,8 @@ func TestHomeHandler(t *testing.T) {
 	})
 
 	t.Run("custom template", func(t *testing.T) {
+		t.Parallel()
+
 		tempDir := t.TempDir()
 		homeTmpl := "{{ .ClusterName }} {{ .HTTPPath }}"
 		if err := os.WriteFile(filepath.Join(tempDir, "home.tmpl"), []byte(homeTmpl), 0644); err != nil {
@@ -107,7 +89,11 @@ func TestHomeHandler(t *testing.T) {
 }
 
 func TestStaticHandler(t *testing.T) {
+	t.Parallel()
+
 	t.Run("default embedded static", func(t *testing.T) {
+		t.Parallel()
+
 		ts := newTestServer(t)
 		ts.cfg = &config.Config{}
 
@@ -125,6 +111,8 @@ func TestStaticHandler(t *testing.T) {
 	})
 
 	t.Run("custom static directory", func(t *testing.T) {
+		t.Parallel()
+
 		tempDir := t.TempDir()
 		customCSS := "/* custom stylesheet */ body { background-color: #000; }"
 		if err := os.WriteFile(filepath.Join(tempDir, "style.css"), []byte(customCSS), 0644); err != nil {
@@ -151,6 +139,8 @@ func TestStaticHandler(t *testing.T) {
 }
 
 func TestCallbackHandler(t *testing.T) {
+	t.Parallel()
+
 	tests := map[string]struct {
 		params             map[string]string
 		expectedStatusCode int
@@ -166,26 +156,25 @@ func TestCallbackHandler(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
 			ts := newTestServer(t)
 			ts.cfg = &config.Config{
 				HTTPPath: "/foo",
 			}
 
-			rsp := NewRecorder()
-			req, err := http.NewRequest(http.MethodGet, "/callback", nil)
-			if err != nil {
-				t.Fatal(err)
-			}
+			rsp := httptest.NewRecorder()
+			req := httptest.NewRequest(http.MethodGet, "/callback", nil)
 
 			// Create request
-			session, err := ts.gangplankUserSession.Session.Get(req, "gangplank")
+			sess, err := ts.gangplankUserSession.Session.Get(req, "gangplank")
 			if err != nil {
 				t.Fatalf("Error getting session: %v", err)
 			}
 
 			// Create state session variable
-			session.Values["state"] = tc.params["state"]
-			if err = session.Save(req, rsp); err != nil {
+			sess.Values["state"] = tc.params["state"]
+			if err = sess.Save(req, rsp); err != nil {
 				t.Fatal(err)
 			}
 
@@ -209,6 +198,8 @@ func TestCallbackHandler(t *testing.T) {
 	}
 }
 func TestCommandLineHandler(t *testing.T) {
+	t.Parallel()
+
 	tests := map[string]struct {
 		params                     map[string]string
 		emailClaim                 string
@@ -254,6 +245,8 @@ func TestCommandLineHandler(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
 			ts := newTestServer(t)
 			ts.cfg = &config.Config{
 				HTTPPath:      "/foo",
@@ -264,46 +257,7 @@ func TestCommandLineHandler(t *testing.T) {
 				ClientSecret:  testClientSecret,
 			}
 
-			rsp := NewRecorder()
-			req, err := http.NewRequest(http.MethodGet, "/callback", nil)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			// Create request
-			session, err := ts.gangplankUserSession.Session.Get(req, "gangplank")
-			if err != nil {
-				t.Fatalf("Error getting session: %v", err)
-			}
-			sessionIDToken, err := ts.gangplankUserSession.Session.Get(req, "gangplank_id_token")
-			if err != nil {
-				t.Fatalf("Error getting session: %v", err)
-			}
-			sessionRefreshToken, err := ts.gangplankUserSession.Session.Get(req, "gangplank_refresh_token")
-			if err != nil {
-				t.Fatalf("Error getting session: %v", err)
-			}
-
-			// Create state session variable
-			session.Values["state"] = tc.params["state"]
-			sessionIDToken.Values["id_token"] = tc.params["id_token"]
-			sessionRefreshToken.Values["refresh_token"] = tc.params["refresh_token"]
-			if err = session.Save(req, rsp); err != nil {
-				t.Fatal(err)
-			}
-			if err = sessionIDToken.Save(req, rsp); err != nil {
-				t.Fatal(err)
-			}
-			if err = sessionRefreshToken.Save(req, rsp); err != nil {
-				t.Fatal(err)
-			}
-
-			// Add query params to request
-			q := req.URL.Query()
-			for k, v := range tc.params {
-				q.Add(k, v)
-			}
-			req.URL.RawQuery = q.Encode()
+			rsp, req := newRequestWithSessions(t, ts, "/callback", tc.params)
 
 			handler := http.HandlerFunc(ts.commandlineHandler)
 
@@ -316,19 +270,15 @@ func TestCommandLineHandler(t *testing.T) {
 			}
 			// if response code is OK then check that username is correct in resultant template
 			if rsp.Code == 200 {
-				bodyBytes, _ := io.ReadAll(rsp.Body)
-				bodyString := string(bodyBytes)
-				re := regexp.MustCompile("--user=(.+)")
-				found := re.FindString(bodyString)
-				if !strings.Contains(found, tc.expectedUsernameInTemplate) {
-					t.Errorf("template should contain --user=%s but found %s", tc.expectedUsernameInTemplate, found)
-				}
+				assertUsernameInTemplate(t, rsp, tc.expectedUsernameInTemplate)
 			}
 		})
 	}
 }
 
 func TestKubeconfigHandler(t *testing.T) {
+	t.Parallel()
+
 	tests := map[string]struct {
 		cfg                                config.Config
 		params                             map[string]string
@@ -393,66 +343,17 @@ func TestKubeconfigHandler(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
 			ts := newTestServer(t)
 			ts.cfg = &tc.cfg
 
-			// Create dummy cluster CA file
+			// Create dummy cluster CA and cluster IDP CA files
 			clusterCAData := "dummy cluster CA"
-			f, err := os.CreateTemp(t.TempDir(), "gangplank-kubeconfig-handler-test")
-			if err != nil {
-				t.Fatalf("Error creating temp file: %v", err)
-			}
-			fmt.Fprint(f, clusterCAData)
+			ts.cfg.ClusterCAPath = writeTempFile(t, "gangplank-kubeconfig-handler-test", clusterCAData)
+			ts.cfg.IDPCAPath = writeTempFile(t, "gangplank-kubeconfig-handler-test-idp", "dummy cluster IDP CA")
 
-			// Create dummy cluster IDP CA file
-			idpCAData := "dummy cluster IDP CA"
-			fIdp, err := os.CreateTemp(t.TempDir(), "gangplank-kubeconfig-handler-test-idp")
-			if err != nil {
-				t.Fatalf("Error creating temp file: %v", err)
-			}
-			fmt.Fprint(fIdp, idpCAData)
-
-			ts.cfg.ClusterCAPath = f.Name()
-			ts.cfg.IDPCAPath = fIdp.Name()
-
-			rsp := NewRecorder()
-			req, err := http.NewRequest(http.MethodGet, "/kubeconf", nil)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			// Create request
-			session, err := ts.gangplankUserSession.Session.Get(req, "gangplank")
-			if err != nil {
-				t.Fatalf("Error getting session: %v", err)
-			}
-			sessionIDToken, err := ts.gangplankUserSession.Session.Get(req, "gangplank_id_token")
-			if err != nil {
-				t.Fatalf("Error getting session: %v", err)
-			}
-			sessionRefreshToken, err := ts.gangplankUserSession.Session.Get(req, "gangplank_refresh_token")
-			if err != nil {
-				t.Fatalf("Error getting session: %v", err)
-			}
-
-			sessionIDToken.Values["id_token"] = tc.params["id_token"]
-			sessionRefreshToken.Values["refresh_token"] = tc.params["refresh_token"]
-			if err = session.Save(req, rsp); err != nil {
-				t.Fatal(err)
-			}
-			if err = sessionIDToken.Save(req, rsp); err != nil {
-				t.Fatal(err)
-			}
-			if err = sessionRefreshToken.Save(req, rsp); err != nil {
-				t.Fatal(err)
-			}
-
-			// Add query params to request
-			q := req.URL.Query()
-			for k, v := range tc.params {
-				q.Add(k, v)
-			}
-			req.URL.RawQuery = q.Encode()
+			rsp, req := newRequestWithSessions(t, ts, "/kubeconf", tc.params)
 
 			handler := http.HandlerFunc(ts.kubeConfigHandler)
 
@@ -483,6 +384,164 @@ func TestKubeconfigHandler(t *testing.T) {
 				tc.expectedAuthInfoName, tc.expectedAuthInfoAuthProviderConfig,
 			)
 		})
+	}
+}
+
+func TestUnauthedCommandlineHandlerRedirect(t *testing.T) {
+	t.Parallel()
+
+	ts := newTestServer(t)
+	ts.cfg = &config.Config{}
+
+	req := httptest.NewRequest(http.MethodGet, "/commandline", nil)
+
+	session.New("test", false)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(ts.commandlineHandler)
+
+	handler.ServeHTTP(rr, req)
+	if status := rr.Code; status != http.StatusTemporaryRedirect {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusOK)
+	}
+}
+
+func TestSanitizeFilename(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		input    string
+		expected string
+	}{
+		"clean": {
+			input:    "kubeconfig",
+			expected: "kubeconfig",
+		},
+		"with quotes": {
+			input:    `file"name`,
+			expected: "file_name",
+		},
+		"with backslash": {
+			input:    `file\name`,
+			expected: "file_name",
+		},
+		"with slash": {
+			input:    "file/name",
+			expected: "file_name",
+		},
+		"with newlines": {
+			input:    "file\r\nname",
+			expected: "file__name",
+		},
+		"header injection attempt": {
+			input:    "file\r\nX-Injected: true",
+			expected: "file__X-Injected: true",
+		},
+		"empty": {
+			input:    "",
+			expected: "",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			got := sanitizeFilename(tc.input)
+			if got != tc.expected {
+				t.Errorf("sanitizeFilename(%q) = %q, want %q", tc.input, got, tc.expected)
+			}
+		})
+	}
+}
+
+func newTestServer(t *testing.T) *server {
+	t.Helper()
+
+	userSession, err := session.New("test", false)
+	if err != nil {
+		t.Fatalf("failed to create session: %v", err)
+	}
+
+	oauth2Cfg := &oauth2.Config{
+		ClientID:     "cfg.ClientID",
+		ClientSecret: testClientSecret,
+		RedirectURL:  "cfg.RedirectURL",
+	}
+
+	return &server{
+		gangplankUserSession: userSession,
+		transportConfig:      config.NewTransportConfig(""),
+		oauth2Cfg:            oauth2Cfg,
+		o2token:              &FakeToken{OAuth2Cfg: oauth2Cfg},
+	}
+}
+
+// newRequestWithSessions builds a GET request for target with params as query parameters, and stores the
+// state, id_token and refresh_token params (when present) in the gangplank sessions.
+func newRequestWithSessions(
+	t *testing.T,
+	ts *server,
+	target string,
+	params map[string]string,
+) (*httptest.ResponseRecorder, *http.Request) {
+	t.Helper()
+
+	rsp := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, target, nil)
+
+	sessionValues := []struct {
+		name string
+		key  string
+	}{
+		{name: "gangplank", key: "state"},
+		{name: "gangplank_id_token", key: "id_token"},
+		{name: "gangplank_refresh_token", key: "refresh_token"},
+	}
+	for _, sv := range sessionValues {
+		sess, getErr := ts.gangplankUserSession.Session.Get(req, sv.name)
+		if getErr != nil {
+			t.Fatalf("Error getting session: %v", getErr)
+		}
+		if value, ok := params[sv.key]; ok {
+			sess.Values[sv.key] = value
+		}
+		if saveErr := sess.Save(req, rsp); saveErr != nil {
+			t.Fatal(saveErr)
+		}
+	}
+
+	q := req.URL.Query()
+	for k, v := range params {
+		q.Add(k, v)
+	}
+	req.URL.RawQuery = q.Encode()
+
+	return rsp, req
+}
+
+func writeTempFile(t *testing.T, name, data string) string {
+	t.Helper()
+
+	path := filepath.Join(t.TempDir(), name)
+	if err := os.WriteFile(path, []byte(data), 0o600); err != nil {
+		t.Fatalf("Error creating temp file: %v", err)
+	}
+
+	return path
+}
+
+func assertUsernameInTemplate(t *testing.T, rsp *httptest.ResponseRecorder, expectedUsername string) {
+	t.Helper()
+
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	if err != nil {
+		t.Fatalf("error reading body: %v", err)
+	}
+	found := regexp.MustCompile("--user=(.+)").FindString(string(bodyBytes))
+	if !strings.Contains(found, expectedUsername) {
+		t.Errorf("template should contain --user=%s but found %s", expectedUsername, found)
 	}
 }
 
@@ -534,7 +593,7 @@ func validateKubeconfig(
 	if authInfo.AuthInfo.AuthProvider.Name != "oidc" {
 		t.Errorf("expected authprovider to be oidc, got %s", authInfo.AuthInfo.AuthProvider.Name)
 	}
-	if !reflect.DeepEqual(authInfo.AuthInfo.AuthProvider.Config, expectedAuthProviderConfig) {
+	if !maps.Equal(authInfo.AuthInfo.AuthProvider.Config, expectedAuthProviderConfig) {
 		t.Errorf("Expected %v, got %v", expectedAuthProviderConfig, authInfo.AuthInfo.AuthProvider.Config)
 	}
 
@@ -554,80 +613,6 @@ func validateKubeconfig(
 	}
 	if kubeconfig.CurrentContext != ctx.Name {
 		t.Errorf("Current context %q does not match context name %q", kubeconfig.CurrentContext, ctx.Name)
-	}
-}
-
-func TestUnauthedCommandlineHandlerRedirect(t *testing.T) {
-	ts := newTestServer(t)
-	ts.cfg = &config.Config{}
-
-	req, err := http.NewRequest(http.MethodGet, "/commandline", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	session.New("test", false)
-
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(ts.commandlineHandler)
-
-	handler.ServeHTTP(rr, req)
-	if status := rr.Code; status != http.StatusTemporaryRedirect {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusOK)
-	}
-}
-
-// NewRecorder returns an initialized ResponseRecorder.
-func NewRecorder() *httptest.ResponseRecorder {
-	return &httptest.ResponseRecorder{
-		HeaderMap: make(http.Header),
-		Body:      new(bytes.Buffer),
-	}
-}
-
-func TestSanitizeFilename(t *testing.T) {
-	tests := map[string]struct {
-		input    string
-		expected string
-	}{
-		"clean": {
-			input:    "kubeconfig",
-			expected: "kubeconfig",
-		},
-		"with quotes": {
-			input:    `file"name`,
-			expected: "file_name",
-		},
-		"with backslash": {
-			input:    `file\name`,
-			expected: "file_name",
-		},
-		"with slash": {
-			input:    "file/name",
-			expected: "file_name",
-		},
-		"with newlines": {
-			input:    "file\r\nname",
-			expected: "file__name",
-		},
-		"header injection attempt": {
-			input:    "file\r\nX-Injected: true",
-			expected: "file__X-Injected: true",
-		},
-		"empty": {
-			input:    "",
-			expected: "",
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := sanitizeFilename(tc.input)
-			if got != tc.expected {
-				t.Errorf("sanitizeFilename(%q) = %q, want %q", tc.input, got, tc.expected)
-			}
-		})
 	}
 }
 

@@ -11,20 +11,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package config
+package config_test
 
 import (
 	"testing"
+
+	"github.com/sighupio/gangplank/internal/config"
 )
 
 func TestConfigNotFound(t *testing.T) {
-	_, err := NewConfig("nonexistentfile")
+	t.Parallel()
+
+	_, err := config.NewConfig("nonexistentfile")
 	if err == nil {
 		t.Errorf("Expected config file parsing to file for non-existent config file")
 	}
 }
 
-func TestEnvionmentOverrides(t *testing.T) {
+func TestEnvironmentOverrides(t *testing.T) {
 	t.Setenv("GANGPLANK_CONFIG_AUTHORIZE_URL", "https://foo.bar/authorize")
 	t.Setenv("GANGPLANK_CONFIG_APISERVER_URL", "https://k8s-api.foo.baz")
 	t.Setenv("GANGPLANK_CONFIG_CLIENT_ID", "foo")
@@ -41,7 +45,7 @@ func TestEnvionmentOverrides(t *testing.T) {
 	t.Setenv("GANGPLANK_CONFIG_CUSTOM_STATIC_DIR", "/custom-static")
 	t.Setenv("GANGPLANK_CONFIG_REMOVE_CA_FROM_KUBECONFIG", "true")
 	t.Setenv("GANGPLANK_CONFIG_NAMESPACE", "default")
-	cfg, err := NewConfig("")
+	cfg, err := config.NewConfig("")
 	if err != nil {
 		t.Errorf("Failed to test config overrides with error: %s", err)
 	}
@@ -88,6 +92,8 @@ func TestEnvionmentOverrides(t *testing.T) {
 }
 
 func TestGetRootPathPrefix(t *testing.T) {
+	t.Parallel()
+
 	tests := map[string]struct {
 		path string
 		want string
@@ -108,7 +114,9 @@ func TestGetRootPathPrefix(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			cfg := &Config{
+			t.Parallel()
+
+			cfg := &config.Config{
 				HTTPPath: tc.path,
 			}
 

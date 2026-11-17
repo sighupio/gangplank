@@ -11,17 +11,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package oidc
+package oidc_test
 
 import (
 	"bytes"
 	"encoding/base64"
+	"maps"
 	"testing"
 
 	"github.com/golang-jwt/jwt/v5"
+
+	"github.com/sighupio/gangplank/internal/oidc"
 )
 
 func TestParseToken(t *testing.T) {
+	t.Parallel()
+
 	base64Decode := func(src string) []byte {
 		data, err := base64.RawURLEncoding.DecodeString(src)
 		if err != nil {
@@ -89,7 +94,9 @@ func TestParseToken(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := ParseToken(tc.idToken, tc.clientSecret)
+			t.Parallel()
+
+			got, err := oidc.ParseToken(tc.idToken, tc.clientSecret)
 
 			// If we expect an error, check that it's thrown
 			if tc.expectError {
@@ -123,24 +130,10 @@ func validateToken(t *testing.T, got, want *jwt.Token) {
 	if got.Method != want.Method {
 		t.Fatalf("Method: want: %v, got: %v", want, got)
 	}
-	if !eq(got.Header, want.Header) {
+	if !maps.Equal(got.Header, want.Header) {
 		t.Fatalf("Header: want: %v, got: %v", want, got)
 	}
-	if !eq(got.Claims.(jwt.MapClaims), want.Claims.(jwt.MapClaims)) {
+	if !maps.Equal(got.Claims.(jwt.MapClaims), want.Claims.(jwt.MapClaims)) {
 		t.Fatalf("Header: want: %v, got: %v", want, got)
 	}
-}
-
-func eq(a, b map[string]any) bool {
-	if len(a) != len(b) {
-		return false
-	}
-
-	for k, v := range a {
-		if w, ok := b[k]; !ok || v != w {
-			return false
-		}
-	}
-
-	return true
 }
