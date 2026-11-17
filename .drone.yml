@@ -55,6 +55,23 @@ steps:
     depends_on:
       - prepare
 
+  - name: test
+    image: quay.io/sighup/mise:v2025.4.4
+    commands:
+      - eval "$(mise activate bash --shims)"
+      - mise run test
+    environment:
+      MISE_DATA_DIR: /mise-data
+      CGO_ENABLED: 1
+      GOCACHE: /drone/src/.go/cache
+      GOMODCACHE: /drone/src/.go/modcache
+      GOTMPDIR: /drone/src/.go/tmp
+    volumes:
+      - name: mise-cache
+        path: /mise-data
+    depends_on:
+      - prepare
+
   - name: build
     image: quay.io/sighup/mise:v2025.4.4
     commands:
@@ -74,6 +91,7 @@ steps:
       - name: mise-cache
         path: /mise-data
     depends_on:
+      - test
       - check-license
     when:
       ref:
@@ -109,6 +127,7 @@ steps:
       - name: mise-cache
         path: /mise-data
     depends_on:
+      - test
       - check-license
     when:
       ref:
@@ -126,7 +145,6 @@ volumes:
 trigger:
   event:
     exclude:
-      - pull_request
       - promote
   ref:
     exclude:
