@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package oidc
+package oidc_test
 
 import (
 	"bytes"
@@ -20,9 +20,13 @@ import (
 	"testing"
 
 	"github.com/golang-jwt/jwt/v5"
+
+	"github.com/sighupio/gangplank/internal/oidc"
 )
 
 func TestParseToken(t *testing.T) {
+	t.Parallel()
+
 	base64Decode := func(src string) []byte {
 		data, err := base64.RawURLEncoding.DecodeString(src)
 		if err != nil {
@@ -90,7 +94,9 @@ func TestParseToken(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := ParseToken(tc.idToken, tc.clientSecret)
+			t.Parallel()
+
+			got, err := oidc.ParseToken(tc.idToken, tc.clientSecret)
 
 			// If we expect an error, check that it's thrown
 			if tc.expectError {

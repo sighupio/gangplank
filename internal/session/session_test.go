@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package session
+package session_test
 
 import (
 	"net/http"
@@ -19,22 +19,14 @@ import (
 	"testing"
 
 	"github.com/gorilla/sessions"
+
+	"github.com/sighupio/gangplank/internal/session"
 )
 
-func TestGenerateSessionKeys(t *testing.T) {
-	b1, b2, err := generateSessionKeys("testing")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if len(b1) != 64 || len(b2) != 32 {
-		t.Errorf("Wrong byte length's returned")
-		return
-	}
-}
-
 func TestInitSessionStore(t *testing.T) {
-	s, err := New("testing", false)
+	t.Parallel()
+
+	s, err := session.New("testing", false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -45,14 +37,16 @@ func TestInitSessionStore(t *testing.T) {
 }
 
 func TestCleanupSession(t *testing.T) {
-	s, err := New("testing", false)
+	t.Parallel()
+
+	s, err := session.New("testing", false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	session := &sessions.Session{}
+	sess := &sessions.Session{}
 	// create a test http server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		session, _ = s.Session.Get(r, "gangplank")
+		sess, _ = s.Session.Get(r, "gangplank")
 		s.Cleanup(w, r, "gangplank")
 	}))
 	defer ts.Close()
@@ -60,7 +54,7 @@ func TestCleanupSession(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error getting from test server: %v", err)
 	}
-	if session.Options.MaxAge != -1 {
-		t.Errorf("Session was not reset. Have max age of %d. Should have -1", session.Options.MaxAge)
+	if sess.Options.MaxAge != -1 {
+		t.Errorf("Session was not reset. Have max age of %d. Should have -1", sess.Options.MaxAge)
 	}
 }
