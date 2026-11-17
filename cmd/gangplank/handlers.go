@@ -58,7 +58,8 @@ type userInfo struct {
 
 // homeInfo is used to store dynamic properties on.
 type homeInfo struct {
-	HTTPPath string
+	ClusterName string
+	HTTPPath    string
 }
 
 func (s *server) staticHandler() http.Handler {
@@ -178,7 +179,8 @@ func (s *server) loginRequired(next http.Handler) http.Handler {
 
 func (s *server) homeHandler(w http.ResponseWriter, _ *http.Request) {
 	data := &homeInfo{
-		HTTPPath: s.cfg.HTTPPath,
+		ClusterName: s.cfg.ClusterName,
+		HTTPPath:    s.cfg.HTTPPath,
 	}
 
 	s.serveTemplate("home.tmpl", data, w)

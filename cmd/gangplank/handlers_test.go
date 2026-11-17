@@ -64,24 +64,46 @@ func newTestServer(t *testing.T) *server {
 }
 
 func TestHomeHandler(t *testing.T) {
-	req, err := http.NewRequest(http.MethodGet, "/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	t.Run("default embedded template", func(t *testing.T) {
+		ts := newTestServer(t)
+		ts.cfg = &config.Config{}
 
-	ts := newTestServer(t)
-	ts.cfg = &config.Config{
-		HTTPPath: "",
-	}
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		rr := httptest.NewRecorder()
 
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(ts.homeHandler)
+		ts.homeHandler(rr, req)
 
-	handler.ServeHTTP(rr, req)
-	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusOK)
-	}
+		if status := rr.Code; status != http.StatusOK {
+			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+		}
+	})
+
+	t.Run("custom template", func(t *testing.T) {
+		tempDir := t.TempDir()
+		homeTmpl := "{{ .ClusterName }} {{ .HTTPPath }}"
+		if err := os.WriteFile(filepath.Join(tempDir, "home.tmpl"), []byte(homeTmpl), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		ts := newTestServer(t)
+		ts.cfg = &config.Config{
+			ClusterName:            "cluster1",
+			HTTPPath:               "/foo",
+			CustomHTMLTemplatesDir: tempDir,
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		rr := httptest.NewRecorder()
+
+		ts.homeHandler(rr, req)
+
+		if status := rr.Code; status != http.StatusOK {
+			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+		}
+		if want := "cluster1 /foo"; rr.Body.String() != want {
+			t.Errorf("expected body to be %q, got %q", want, rr.Body.String())
+		}
+	})
 }
 
 func TestStaticHandler(t *testing.T) {
